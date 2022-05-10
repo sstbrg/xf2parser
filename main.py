@@ -28,6 +28,10 @@ input = urlparse(os.environ.get('INPUT',
 output = urlparse(os.environ.get('OUTPUT', 's3://x-cognito/xf2parser/20220503_sine31hz_1mv_xf2-.~1652126233'))
 
 local_work_directory = 'data'
+if not os.path.isdir(local_work_directory):
+    os.mkdir(local_work_directory)
+if not os.path.isdir('result'):
+    os.mkdir('result')
 local_output_path = os.path.join('result', 'result.edf')
 
 # download data

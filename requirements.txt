@@ -4,3 +4,4 @@ natsort
 pyedflib
 tqdm
 boto3
+construct

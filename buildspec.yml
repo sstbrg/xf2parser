@@ -4,7 +4,7 @@ env:
 phases:
   install:
     runtime-versions:
-      python: 3.7
+      python: 3.9
   pre_build:
     commands:
     - echo Logging in to Amazon ECR...

@@ -1,5 +1,7 @@
 venv/
 tmp/
+data/
+result/
 *.csv
 buildspec.yml
 Dockerfile

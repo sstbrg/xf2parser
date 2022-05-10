@@ -1,0 +1,6 @@
+attrs
+numpy
+natsort
+pyedflib
+tqdm
+boto3

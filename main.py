@@ -1,6 +1,6 @@
 import natsort
-from xtrbtparser.XF2Parser import *
-from xtrbtparser.EDFExport import *
+from XF2Parser import *
+from EDFExport import *
 from botocore.config import Config
 import boto3
 from urllib.parse import urlparse

@@ -58,7 +58,6 @@ class Parser(object):
                         offset[REC_TYPE_ADC] += int((rec.header.Length - 4) / 2 / num_of_active_channels)
 
                     if rec.header.Type == REC_TYPE_MOTION:
-                        print(rec)
                         data[REC_TYPE_MOTION][offset[REC_TYPE_MOTION]:offset[REC_TYPE_MOTION] + int(
                             (rec.header.Length - 4) / 2 / NUMBER_OF_HW_MOTION_CHANNELS), :] = np.reshape(
                             np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 4)],

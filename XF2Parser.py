@@ -18,8 +18,8 @@ class Parser(object):
 
         # infer final array size, usually there are 1038 adc records of 3840 bytes per file and 369 motion records of size 510 bytes
 
-        adc_data_shape = (int(124560*len(file_list)), NUMBER_OF_HW_ADC_CHANNELS) #(int(np.ceil(sum([sum([(rec.header.Length-4)/2/NUMBER_OF_HW_ADC_CHANNELS if rec.header.Type==REC_TYPE_ADC else 0 for rec in x.records]) for x in files]))), NUMBER_OF_HW_ADC_CHANNELS)
-        motion_data_shape = (int(31365*len(file_list)), NUMBER_OF_HW_MOTION_CHANNELS) #(int(np.ceil(sum([sum([(rec.header.Length-4)/2/NUMBER_OF_HW_ADC_CHANNELS if rec.header.Type==REC_TYPE_MOTION else 0 for rec in x.records]) for x in files]))), NUMBER_OF_HW_MOTION_CHANNELS)
+        adc_data_shape = (int(124560*1.5*len(file_list)), NUMBER_OF_HW_ADC_CHANNELS) #(int(np.ceil(sum([sum([(rec.header.Length-4)/2/NUMBER_OF_HW_ADC_CHANNELS if rec.header.Type==REC_TYPE_ADC else 0 for rec in x.records]) for x in files]))), NUMBER_OF_HW_ADC_CHANNELS)
+        motion_data_shape = (int(31365*1.5*len(file_list)), NUMBER_OF_HW_MOTION_CHANNELS) #(int(np.ceil(sum([sum([(rec.header.Length-4)/2/NUMBER_OF_HW_ADC_CHANNELS if rec.header.Type==REC_TYPE_MOTION else 0 for rec in x.records]) for x in files]))), NUMBER_OF_HW_MOTION_CHANNELS)
 
         # create the arrays
         data = {REC_TYPE_ADC: np.empty(adc_data_shape),
@@ -58,6 +58,7 @@ class Parser(object):
                         offset[REC_TYPE_ADC] += int((rec.header.Length - 4) / 2 / num_of_active_channels)
 
                     if rec.header.Type == REC_TYPE_MOTION:
+                        print(rec)
                         data[REC_TYPE_MOTION][offset[REC_TYPE_MOTION]:offset[REC_TYPE_MOTION] + int(
                             (rec.header.Length - 4) / 2 / NUMBER_OF_HW_MOTION_CHANNELS), :] = np.reshape(
                             np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 4)],

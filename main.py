@@ -24,8 +24,8 @@ client = boto3.client('s3', config=clientconfig)
 
 
 input = urlparse(os.environ.get('INPUT',
-                                 's3://xtrodes-datasets/public/cognito/xtrodesclient/us-east-1:092b1e60-489d-44d3-99ee-92546c2fb72f/20220503_sine31hz_1mv_xf2-.~1652126233/RECORDS/'))
-output = urlparse(os.environ.get('OUTPUT', 's3://x-cognito/xf2parser/20220503_sine31hz_1mv_xf2-.~1652126233'))
+                                 's3://x-cognito/xf2parser/test_data/'))
+output = urlparse(os.environ.get('OUTPUT', 's3://x-cognito/xf2parser/test_data/TEST2132.edf'))
 
 local_work_directory = 'data'
 if not os.path.isdir(local_work_directory):

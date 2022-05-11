@@ -24,8 +24,8 @@ client = boto3.client('s3', config=clientconfig)
 
 
 input = urlparse(os.environ.get('INPUT',
-                                 's3://x-cognito/xf2parser/test_data/'))
-output = urlparse(os.environ.get('OUTPUT', 's3://x-cognito/xf2parser/test_data/TEST2132.edf'))
+                                 's3://xtrodes-datasets/public/cognito/xtrodesclient/us-east-1:092b1e60-489d-44d3-99ee-92546c2fb72f/20220506_1005_13_NoApp_31_1/'))
+output = urlparse(os.environ.get('OUTPUT', 's3://x-cognito/xf2parser/test_data/20220506_1005_13_NoApp_31_1.edf'))
 
 local_work_directory = 'data'
 if not os.path.isdir(local_work_directory):
@@ -38,10 +38,11 @@ local_output_path = os.path.join('result', 'result.edf')
 files = natsort.natsorted(get_matching_s3_objects(bucket=input.netloc, prefix=input.path[1:]))
 
 for f in files:
-    local_file_path = os.path.join(local_work_directory, Path(f).name)
-    if not os.path.isfile(local_file_path):
-        print('INFO: downloading %s' % f)
-        client.download_file(input.netloc, f, local_file_path)
+    if 'xf2' in Path(f).name.lower():
+        local_file_path = os.path.join(local_work_directory, Path(f).name)
+        if not os.path.isfile(local_file_path):
+            print('INFO: downloading %s' % f)
+            client.download_file(input.netloc, f, local_file_path)
 print('INFO: done pulling files')
 
 # f = File(filepath=local_file_path)

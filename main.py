@@ -24,15 +24,15 @@ client = boto3.client('s3', config=clientconfig)
 
 
 input = urlparse(os.environ.get('INPUT',
-                                 's3://xtrodes-datasets/public/cognito/xtrodesclient/us-east-1:092b1e60-489d-44d3-99ee-92546c2fb72f/20220506_1005_13_NoApp_31_1/'))
-output = urlparse(os.environ.get('OUTPUT', 's3://x-cognito/xf2parser/test_data/20220506_1005_13_NoApp_31_1.edf'))
+                                 's3://xtrodes-datasets/public/cognito/xtrodesclient/us-east-1:092b1e60-489d-44d3-99ee-92546c2fb72f/20220503_sine31hz_1mv_xf2-.~1652126233/RECORDS/'))
+output = urlparse(os.environ.get('OUTPUT', 's3://x-cognito/xf2parser/test_data/20220503_sine31hz_1mv_xf2-.~1652126233.edf'))
 
 local_work_directory = 'data'
 if not os.path.isdir(local_work_directory):
     os.mkdir(local_work_directory)
 if not os.path.isdir('result'):
     os.mkdir('result')
-local_output_path = os.path.join('result', 'result.edf')
+local_output_path = os.path.join('result', 'result.npy')
 
 # download data
 files = natsort.natsorted(get_matching_s3_objects(bucket=input.netloc, prefix=input.path[1:]))
@@ -48,8 +48,9 @@ print('INFO: done pulling files')
 # f = File(filepath=local_file_path)
 parser = Parser(work_directory = local_work_directory)
 parser.process_files()
-edfer = EDFProcessor(file_path=local_output_path)
-edfer.dump_to_edf(data_in=np.transpose(parser.data[REC_TYPE_ADC]), sample_rate=4000)
+np.save(local_output_path, parser.data[REC_TYPE_ADC])
+#edfer = EDFProcessor(file_path=local_output_path)
+#edfer.dump_to_edf(data_in=np.transpose(parser.data[REC_TYPE_ADC]), sample_rate=4000)
 
 output_prefix = output.path[1:]
 print('INFO: uploading %s' % output_prefix)

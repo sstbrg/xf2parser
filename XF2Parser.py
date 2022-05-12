@@ -54,7 +54,7 @@ class Parser(object):
                                           dtype='<u2'),
                             newshape=(
                             int((rec.header.Length - 4) / 2 / num_of_active_channels), num_of_active_channels),
-                            order='C').astype(np.uint16)
+                            order='C')
                         offset[REC_TYPE_ADC] += int((rec.header.Length - 4) / 2 / num_of_active_channels)
 
                     if rec.header.Type == REC_TYPE_MOTION:
@@ -64,15 +64,17 @@ class Parser(object):
                                           dtype='<u2'),
                             newshape=(int((rec.header.Length - 4) / 2 / NUMBER_OF_HW_MOTION_CHANNELS),
                                       NUMBER_OF_HW_MOTION_CHANNELS),
-                            order='C').astype(np.uint16)
+                            order='C')
                         offset[REC_TYPE_MOTION] += int((rec.header.Length - 4) / 2 / NUMBER_OF_HW_MOTION_CHANNELS)
 
         # trim zero rows
+        data[REC_TYPE_ADC] = data[REC_TYPE_ADC].astype(np.uint16)
+        data[REC_TYPE_MOTION] = data[REC_TYPE_MOTION].astype(np.uint16)
         data[REC_TYPE_ADC] = data[REC_TYPE_ADC][~np.all(data[REC_TYPE_ADC] == 0, axis=1)]
         data[REC_TYPE_MOTION] = data[REC_TYPE_MOTION][~np.all(data[REC_TYPE_MOTION] == 0, axis=1)]
 
         # ADC: convert to voltages
-        data[REC_TYPE_ADC] = ADC_RESOLUTION * (data[REC_TYPE_ADC] - np.float_power(2, ADC_BITS - 1))
+        # data[REC_TYPE_ADC] = ADC_RESOLUTION * (data[REC_TYPE_ADC] - np.float_power(2, ADC_BITS - 1))
 
         # MOTION: convert to degrees
 

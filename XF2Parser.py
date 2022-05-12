@@ -12,14 +12,18 @@ class Parser(object):
     data = attr.field(default={REC_TYPE_ADC: None,
                                REC_TYPE_MOTION: None})
 
-    def process_files(self):
+    def process_files(self, save_path=None, transpose_data=False):
         file_list = natsorted([x for x in glob(os.path.join(self.work_directory, '*'+FILE_FORMAT))])
         # every file usually has 124560 samples of adc data and 94545 samples of gyro data
 
         # infer final array size, usually there are 1038 adc records of 3840 bytes per file and 369 motion records of size 510 bytes
 
-        adc_data_shape = (int(124560*1.5*len(file_list)), NUMBER_OF_HW_ADC_CHANNELS) #(int(np.ceil(sum([sum([(rec.header.Length-4)/2/NUMBER_OF_HW_ADC_CHANNELS if rec.header.Type==REC_TYPE_ADC else 0 for rec in x.records]) for x in files]))), NUMBER_OF_HW_ADC_CHANNELS)
-        motion_data_shape = (int(31365*1.5*len(file_list)), NUMBER_OF_HW_MOTION_CHANNELS) #(int(np.ceil(sum([sum([(rec.header.Length-4)/2/NUMBER_OF_HW_ADC_CHANNELS if rec.header.Type==REC_TYPE_MOTION else 0 for rec in x.records]) for x in files]))), NUMBER_OF_HW_MOTION_CHANNELS)
+        if save_path is None:
+            adc_data_shape = (int(124560*1.5*len(file_list)), NUMBER_OF_HW_ADC_CHANNELS) #(int(np.ceil(sum([sum([(rec.header.Length-4)/2/NUMBER_OF_HW_ADC_CHANNELS if rec.header.Type==REC_TYPE_ADC else 0 for rec in x.records]) for x in files]))), NUMBER_OF_HW_ADC_CHANNELS)
+            motion_data_shape = (int(31365*1.5*len(file_list)), NUMBER_OF_HW_MOTION_CHANNELS) #(int(np.ceil(sum([sum([(rec.header.Length-4)/2/NUMBER_OF_HW_ADC_CHANNELS if rec.header.Type==REC_TYPE_MOTION else 0 for rec in x.records]) for x in files]))), NUMBER_OF_HW_MOTION_CHANNELS)
+        else:
+            adc_data_shape = (int(124560 * 1.5 ), NUMBER_OF_HW_ADC_CHANNELS)
+            motion_data_shape = (int(31365 * 1.5 ), NUMBER_OF_HW_MOTION_CHANNELS)
 
         # create the arrays
         data = {REC_TYPE_ADC: np.empty(adc_data_shape),
@@ -27,6 +31,7 @@ class Parser(object):
 
         # extract data
         offset = {REC_TYPE_ADC: 0, REC_TYPE_MOTION: 0}
+
         for c, filepath in tqdm(enumerate(file_list)):
             print('INFO: collecting data from records of %s' % filepath)
             f = File(filepath=filepath)
@@ -55,6 +60,7 @@ class Parser(object):
                             newshape=(
                             int((rec.header.Length - 4) / 2 / num_of_active_channels), num_of_active_channels),
                             order='C')
+
                         offset[REC_TYPE_ADC] += int((rec.header.Length - 4) / 2 / num_of_active_channels)
 
                     if rec.header.Type == REC_TYPE_MOTION:
@@ -65,20 +71,27 @@ class Parser(object):
                             newshape=(int((rec.header.Length - 4) / 2 / NUMBER_OF_HW_MOTION_CHANNELS),
                                       NUMBER_OF_HW_MOTION_CHANNELS),
                             order='C')
+
                         offset[REC_TYPE_MOTION] += int((rec.header.Length - 4) / 2 / NUMBER_OF_HW_MOTION_CHANNELS)
 
-        # trim zero rows
-        data[REC_TYPE_ADC] = data[REC_TYPE_ADC].astype(np.uint16)
-        data[REC_TYPE_MOTION] = data[REC_TYPE_MOTION].astype(np.uint16)
-        data[REC_TYPE_ADC] = data[REC_TYPE_ADC][~np.all(data[REC_TYPE_ADC] == 0, axis=1)]
-        data[REC_TYPE_MOTION] = data[REC_TYPE_MOTION][~np.all(data[REC_TYPE_MOTION] == 0, axis=1)]
+            # trim zeros from tail
+            data[REC_TYPE_ADC] = np.trim_zeros(data[REC_TYPE_ADC], 'b')#data[REC_TYPE_ADC][~np.all(data[REC_TYPE_ADC] == 0, axis=1)]
+            data[REC_TYPE_MOTION] = np.trim_zeros(data[REC_TYPE_MOTION, 'b'])#data[REC_TYPE_MOTION][~np.all(data[REC_TYPE_MOTION] == 0, axis=1)]
 
-        # ADC: convert to voltages
-        # data[REC_TYPE_ADC] = ADC_RESOLUTION * (data[REC_TYPE_ADC] - np.float_power(2, ADC_BITS - 1))
+            # ADC: convert to voltages
+            data[REC_TYPE_ADC] = data[REC_TYPE_ADC] - np.float_power(2, ADC_BITS - 1) #ADC_RESOLUTION * (data[REC_TYPE_ADC] - np.float_power(2, ADC_BITS - 1))
+            data[REC_TYPE_ADC] = data[REC_TYPE_ADC].astype(np.int16)
 
-        # MOTION: convert to degrees
+            if transpose_data:
+                data[REC_TYPE_ADC] = np.transpose(data[REC_TYPE_ADC])
 
-        self.data = data
+            if save_path is not None:
+                np.save(save_path, data[REC_TYPE_ADC])
+                offset = {REC_TYPE_ADC: 0, REC_TYPE_MOTION: 0}
+
+        if save_path is None:
+            self.data = data
+
         print('INFO: finished collecting data')
 
 

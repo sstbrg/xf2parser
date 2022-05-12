@@ -19,11 +19,12 @@ class Parser(object):
         # infer final array size, usually there are 1038 adc records of 3840 bytes per file and 369 motion records of size 510 bytes
 
         if save_path is None:
-            adc_data_shape = (int(124560*1.5*len(file_list)), NUMBER_OF_HW_ADC_CHANNELS) #(int(np.ceil(sum([sum([(rec.header.Length-4)/2/NUMBER_OF_HW_ADC_CHANNELS if rec.header.Type==REC_TYPE_ADC else 0 for rec in x.records]) for x in files]))), NUMBER_OF_HW_ADC_CHANNELS)
-            motion_data_shape = (int(31365*1.5*len(file_list)), NUMBER_OF_HW_MOTION_CHANNELS) #(int(np.ceil(sum([sum([(rec.header.Length-4)/2/NUMBER_OF_HW_ADC_CHANNELS if rec.header.Type==REC_TYPE_MOTION else 0 for rec in x.records]) for x in files]))), NUMBER_OF_HW_MOTION_CHANNELS)
+            adc_data_shape = (int((3840/2)*2000*len(file_list)), NUMBER_OF_HW_ADC_CHANNELS) #(int(np.ceil(sum([sum([(rec.header.Length-4)/2/NUMBER_OF_HW_ADC_CHANNELS if rec.header.Type==REC_TYPE_ADC else 0 for rec in x.records]) for x in files]))), NUMBER_OF_HW_ADC_CHANNELS)
+            motion_data_shape = (int((510/2)*2000*len(file_list)), NUMBER_OF_HW_MOTION_CHANNELS) #(int(np.ceil(sum([sum([(rec.header.Length-4)/2/NUMBER_OF_HW_ADC_CHANNELS if rec.header.Type==REC_TYPE_MOTION else 0 for rec in x.records]) for x in files]))), NUMBER_OF_HW_MOTION_CHANNELS)
         else:
-            adc_data_shape = (int(124560 * 1.5 ), NUMBER_OF_HW_ADC_CHANNELS)
-            motion_data_shape = (int(31365 * 1.5 ), NUMBER_OF_HW_MOTION_CHANNELS)
+            save_file = open(save_path, 'wb')
+            adc_data_shape = (int((3840/2)*2000), NUMBER_OF_HW_ADC_CHANNELS)
+            motion_data_shape = (int((3840/2)*2000), NUMBER_OF_HW_MOTION_CHANNELS)
 
         # create the arrays
         data = {REC_TYPE_ADC: np.empty(adc_data_shape),
@@ -75,8 +76,8 @@ class Parser(object):
                         offset[REC_TYPE_MOTION] += int((rec.header.Length - 4) / 2 / NUMBER_OF_HW_MOTION_CHANNELS)
 
             # trim zeros from tail
-            data[REC_TYPE_ADC] = np.trim_zeros(data[REC_TYPE_ADC], 'b')#data[REC_TYPE_ADC][~np.all(data[REC_TYPE_ADC] == 0, axis=1)]
-            data[REC_TYPE_MOTION] = np.trim_zeros(data[REC_TYPE_MOTION, 'b'])#data[REC_TYPE_MOTION][~np.all(data[REC_TYPE_MOTION] == 0, axis=1)]
+            data[REC_TYPE_ADC] = data[REC_TYPE_ADC][~np.all(data[REC_TYPE_ADC] == 0, axis=1)]
+            data[REC_TYPE_MOTION] = data[REC_TYPE_MOTION][~np.all(data[REC_TYPE_MOTION] == 0, axis=1)]
 
             # ADC: convert to voltages
             data[REC_TYPE_ADC] = data[REC_TYPE_ADC] - np.float_power(2, ADC_BITS - 1) #ADC_RESOLUTION * (data[REC_TYPE_ADC] - np.float_power(2, ADC_BITS - 1))
@@ -86,11 +87,16 @@ class Parser(object):
                 data[REC_TYPE_ADC] = np.transpose(data[REC_TYPE_ADC])
 
             if save_path is not None:
-                np.save(save_path, data[REC_TYPE_ADC])
+                np.save(save_file, data[REC_TYPE_ADC])
+                save_file.flush()
+                data = {REC_TYPE_ADC: np.empty(adc_data_shape),
+                        REC_TYPE_MOTION: np.empty(motion_data_shape)}
                 offset = {REC_TYPE_ADC: 0, REC_TYPE_MOTION: 0}
 
         if save_path is None:
             self.data = data
+        else:
+            save_file.close()
 
         print('INFO: finished collecting data')
 

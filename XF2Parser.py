@@ -4,7 +4,6 @@ from natsort import natsorted
 import os
 from tqdm import tqdm
 import numpy as np
-import gc
 
 @attr.define
 class Parser(object):
@@ -54,26 +53,26 @@ class Parser(object):
                     if rec.header.Type == REC_TYPE_ADC:
                         num_of_active_channels = len([x if x is not None else 0 for x in rec.header.ChannelMap])
                         data[REC_TYPE_ADC][offset[REC_TYPE_ADC]:offset[REC_TYPE_ADC] + int(
-                            (rec.header.Length - 4) / 2 / num_of_active_channels),
+                            (rec.header.Length - 6) / 2 / num_of_active_channels),
                         rec.header.ChannelMap] = np.reshape(
-                            np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 4)],
+                            np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)],
                                           dtype='<u2'),
                             newshape=(
-                            int((rec.header.Length - 4) / 2 / num_of_active_channels), num_of_active_channels),
+                            int((rec.header.Length - 6) / 2 / num_of_active_channels), num_of_active_channels),
                             order='C')
 
-                        offset[REC_TYPE_ADC] += int((rec.header.Length - 4) / 2 / num_of_active_channels)
+                        offset[REC_TYPE_ADC] += int((rec.header.Length - 6) / 2 / num_of_active_channels)
 
                     if rec.header.Type == REC_TYPE_MOTION:
                         data[REC_TYPE_MOTION][offset[REC_TYPE_MOTION]:offset[REC_TYPE_MOTION] + int(
-                            (rec.header.Length - 4) / 2 / NUMBER_OF_HW_MOTION_CHANNELS), :] = np.reshape(
-                            np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 4)],
+                            (rec.header.Length - 6) / 2 / NUMBER_OF_HW_MOTION_CHANNELS), :] = np.reshape(
+                            np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)],
                                           dtype='<u2'),
-                            newshape=(int((rec.header.Length - 4) / 2 / NUMBER_OF_HW_MOTION_CHANNELS),
+                            newshape=(int((rec.header.Length - 6) / 2 / NUMBER_OF_HW_MOTION_CHANNELS),
                                       NUMBER_OF_HW_MOTION_CHANNELS),
                             order='C')
 
-                        offset[REC_TYPE_MOTION] += int((rec.header.Length - 4) / 2 / NUMBER_OF_HW_MOTION_CHANNELS)
+                        offset[REC_TYPE_MOTION] += int((rec.header.Length - 6) / 2 / NUMBER_OF_HW_MOTION_CHANNELS)
 
             # trim zeros from tail
             data[REC_TYPE_ADC] = data[REC_TYPE_ADC][~np.all(data[REC_TYPE_ADC] == 0, axis=1)]

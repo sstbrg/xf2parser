@@ -1,12 +1,10 @@
 import natsort
 from XF2Parser import *
-from EDFExport import *
 from botocore.config import Config
 import boto3
 from urllib.parse import urlparse
 from pathlib import Path
 import os
-
 
 def get_matching_s3_objects(bucket, prefix=''):
     s3 = boto3.resource('s3')
@@ -24,8 +22,8 @@ client = boto3.client('s3', config=clientconfig)
 
 
 input = urlparse(os.environ.get('INPUT',
-                                 's3://xtrodes-datasets/public/cognito/xtrodesclient/us-east-1:092b1e60-489d-44d3-99ee-92546c2fb72f/20220503_sine31hz_1mv_xf2-.~1652126233/RECORDS/'))
-output = urlparse(os.environ.get('OUTPUT', 's3://x-cognito/xf2parser/test_data/20220503_sine31hz_1mv_xf2-.~1652126233.npy'))
+                                 's3://x-cognito/xf2parser/fwver009/RECORDS/'))
+output = urlparse(os.environ.get('OUTPUT', 's3://x-cognito/xf2parser/fwver009/PARSED_DATA/parsed.npy'))
 
 local_work_directory = 'data'
 if not os.path.isdir(local_work_directory):
@@ -47,7 +45,7 @@ print('INFO: done pulling files')
 
 # f = File(filepath=local_file_path)
 parser = Parser(work_directory = local_work_directory)
-parser.process_files(save_path=local_output_path, transpose_data=True)
+parser.process_files(save_path = local_output_path, transpose_data=True)
 
 #edfer = EDFProcessor(file_path=local_output_path)
 #edfer.dump_to_edf(data_in=np.transpose(parser.data[REC_TYPE_ADC]), sample_rate=4000)

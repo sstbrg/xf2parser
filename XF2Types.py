@@ -44,7 +44,8 @@ class RecordStruct(Struct):
             'UnixTime' / Int32ul,
             'Length' / Int16ul,
             'PacketIndex' / Int16ul,
-            'ChannelMap' / Int16ul))
+            'ChannelMap' / Int16ul,
+            'SampleRate' / Int16ul))
     #Data = Struct('Data' / Array(header['Length'], Int8ul))
     EOR = attr.ib(default=Struct(
             'CRC' / Int16ul,

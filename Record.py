@@ -65,7 +65,7 @@ class Record(object):
 
         #if self._filecontents[0][self.offset + self.HeaderSize + self.header.Length + self.EORSize - 1] != END_OF_RECORD:
         if content[
-            self.offset + self.HeaderSize + self.header.Length - 4 + self.EORSize - 1] != END_OF_RECORD:
+            self.offset + self.HeaderSize + self.header.Length - 6 + self.EORSize - 1] != END_OF_RECORD:
             errors.append(ERROR_WRONG_EOR)
 
         #if self.eor.CRC != calc_crc16(content[self.offset + 1:
@@ -81,11 +81,11 @@ class Record(object):
         #                                 self.offset + self.HeaderSize + self.header.Length + self.EORSize])
 
         eor = self._EORStruct.parse(content[
-                                    self.offset + self.HeaderSize + self.header.Length - 4:
-                                    self.offset + self.HeaderSize + self.header.Length - 4 + self.EORSize])
+                                    self.offset + self.HeaderSize + self.header.Length - 6:
+                                    self.offset + self.HeaderSize + self.header.Length - 6 + self.EORSize])
 
         if eor.CRC != calc_crc16(content[self.offset+1:
-            self.offset+self.HeaderSize+self.header.Length]):
+            self.offset+1+self.HeaderSize+self.header.Length-6-1]):
             self.errors.append(ERROR_WRONG_CRC)
 
         return eor

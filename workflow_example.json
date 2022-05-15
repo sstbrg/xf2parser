@@ -1,15 +1,28 @@
 {
-  "name": "xf2parser-master",
+  "name": "xf2parser-master-npy-edf",
   "stages": {
-    "xf2parser-execute": {
+    "xf2parser-xf2-to-npy": {
       "input": {
         "secrets": [ ],
         "vars": {
-          "INPUT": "s3://xtrodes-datasets/public/cognito/xtrodesclient/us-east-1:092b1e60-489d-44d3-99ee-92546c2fb72f/20220503_sine31hz_1mv_xf2-.~1652126233/RECORDS/",
-          "OUTPUT": "s3://x-cognito/xf2parser/20220503_sine31hz_1mv_xf2-.~1652126233"
+          "INPUT": "s3://x-cognito/xf2parser/fwver009/RECORDS/",
+          "OUTPUT": "s3://x-cognito/xf2parser/fwver009/PARSED_DATA/parsed20220515.npy"
         },
         "version": {
           "image": "441546564921.dkr.ecr.us-east-1.amazonaws.com/xf2parser:latest"
+        }
+      }
+    },
+    "xf2parser-npy-to-edf": {
+      "depends": ["xf2parser-xf2-to-npy"],
+      "input": {
+        "secrets": [ ],
+        "vars": {
+          "INPUT": "s3://x-cognito/xf2parser/fwver009/PARSED_DATA/",
+          "OUTPUT": "s3://x-cognito/xf2parser/fwver009/EDF/result20220512.edf"
+        },
+        "version": {
+          "image": "441546564921.dkr.ecr.us-east-1.amazonaws.com/edfexport:latest"
         }
       }
     }

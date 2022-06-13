@@ -1,5 +1,6 @@
 import natsort
 from XF2Parser import *
+from EDFExport import *
 from botocore.config import Config
 import boto3
 from urllib.parse import urlparse
@@ -22,15 +23,15 @@ client = boto3.client('s3', config=clientconfig)
 
 
 input = urlparse(os.environ.get('INPUT',
-                                 's3://x-cognito/xf2parser/fwver009/RECORDS/'))
-output = urlparse(os.environ.get('OUTPUT', 's3://x-cognito/xf2parser/fwver009/PARSED_DATA/parsed.npy'))
+                                 's3://x-cognito/xf2parser/dau-13-6/'))
+output = urlparse(os.environ.get('OUTPUT', 's3://x-cognito/xf2parser/dau-13-6/dau-13-6.edf'))
 
 local_work_directory = 'data'
 if not os.path.isdir(local_work_directory):
     os.mkdir(local_work_directory)
 if not os.path.isdir('result'):
     os.mkdir('result')
-local_output_path = os.path.join('result', 'result.npy')
+local_output_path = os.path.join('result', 'result.edf')
 
 # download data
 files = natsort.natsorted(get_matching_s3_objects(bucket=input.netloc, prefix=input.path[1:]))
@@ -43,12 +44,13 @@ for f in files:
             client.download_file(input.netloc, f, local_file_path)
 print('INFO: done pulling files')
 
-# f = File(filepath=local_file_path)
-parser = Parser(work_directory = local_work_directory)
-parser.process_files(save_path = local_output_path, transpose_data=True)
+# parsing
+parser = Parser(work_directory=local_work_directory)
+data_gen = parser.process_files(exclude=[REC_TYPE_MOTION_GYRO_AND_ACCL, REC_TYPE_MOTION_GYRO, REC_TYPE_MOTION_ACCL])
 
-#edfer = EDFProcessor(file_path=local_output_path)
-#edfer.dump_to_edf(data_in=np.transpose(parser.data[REC_TYPE_ADC]), sample_rate=4000)
+# edf creation part
+edfer = EDFProcessor(file_path=local_output_path)
+edfer.save_to_edf(data_generator=data_gen, files_metadata=parser.metadata)
 
 output_prefix = output.path[1:]
 print('INFO: uploading %s' % output_prefix)

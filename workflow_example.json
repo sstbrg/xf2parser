@@ -1,28 +1,15 @@
 {
-  "name": "xf2parser-master-npy-edf",
+  "name": "xf2parser-master",
   "stages": {
     "xf2parser-xf2-to-npy": {
       "input": {
         "secrets": [ ],
         "vars": {
-          "INPUT": "s3://x-cognito/xf2parser/fwver009/RECORDS/",
-          "OUTPUT": "s3://x-cognito/xf2parser/fwver009/PARSED_DATA/parsed20220515.npy"
+          "INPUT": "s3://x-cognito/xf2parser/dau-13-6/",
+          "OUTPUT": "s3://x-cognito/xf2parser/dau-13-6/dau-13-6.edf"
         },
         "version": {
           "image": "441546564921.dkr.ecr.us-east-1.amazonaws.com/xf2parser:latest"
-        }
-      }
-    },
-    "xf2parser-npy-to-edf": {
-      "depends": ["xf2parser-xf2-to-npy"],
-      "input": {
-        "secrets": [ ],
-        "vars": {
-          "INPUT": "s3://x-cognito/xf2parser/fwver009/PARSED_DATA/",
-          "OUTPUT": "s3://x-cognito/xf2parser/fwver009/EDF/result20220512.edf"
-        },
-        "version": {
-          "image": "441546564921.dkr.ecr.us-east-1.amazonaws.com/edfexport:latest"
         }
       }
     }

@@ -24,8 +24,8 @@ class File(object):
     def get_records(self):
         #filecontentsstr = self.filecontents.hex()
         self.records = list()
-        sor_adc_offsets = [(m.start(), 'adc') for m in re.finditer(START_OF_SAMPLING_RECORD, self.filecontents)]
-        sor_motion_offsets = [(m.start(), 'imu') for m in re.finditer(START_OF_MOTION_RECORD, self.filecontents)]
+        sor_adc_offsets = [(m.start(), REC_TYPE_ADC) for m in re.finditer(START_OF_SAMPLING_RECORD, self.filecontents)]
+        sor_motion_offsets = [(m.start(), REC_TYPE_MOTION) for m in re.finditer(START_OF_MOTION_RECORD, self.filecontents)]
         sor_offsets = sorted(sor_adc_offsets + sor_motion_offsets)
 
         for x in sor_offsets:

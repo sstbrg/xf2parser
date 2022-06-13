@@ -1,5 +1,6 @@
 from XF2Types import *
 import binascii
+import struct
 
 # def calc_crc16(bytes_in):
 #     crc16 = crcmod.mkCrcFun(CRC_POLYNOMIAL, CRC_STARTING_VALUE, CRC_BIT_REVERSAL, CRC_XOR_OUT)
@@ -41,10 +42,15 @@ class Record(object):
         parsed = self._HeaderStruct.parse(content[self.offset:self.offset+self.HeaderSize])
         if parsed.Type == REC_TYPE_ADC:
             parsed.ChannelMap = [num if val == '1' else None for num, val in
-                               enumerate(list(bin(parsed.ChannelMap).lstrip('0b')))]
+                               enumerate(list('{0:016b}'.format(parsed.ChannelMap)))]
+            parsed.ChannelMap = [x for x in parsed.ChannelMap if x]
         elif parsed.Type == REC_TYPE_MOTION:
-            if int(bin(parsed.ChannelMap).lstrip('0b')) == 1:
-                parsed.ChannelMap = 1
+            if int(bin(parsed.ChannelMap).lstrip('0b')) == REC_TYPE_MOTION_GYRO:
+                parsed.Type = REC_TYPE_MOTION_GYRO
+            elif int(bin(parsed.ChannelMap).lstrip('0b')) == REC_TYPE_MOTION_ACCL:
+                parsed.Type = REC_TYPE_MOTION_ACCL
+            elif int(bin(parsed.ChannelMap).lstrip('0b')) == REC_TYPE_MOTION_GYRO_AND_ACCL:
+                parsed.Type = REC_TYPE_MOTION_GYRO_AND_ACCL
 
         #print('Length=%d, Sor=%d' % (parsed.Length, parsed.Sor))
         return parsed

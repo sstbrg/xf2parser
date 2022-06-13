@@ -6,8 +6,14 @@ from XF2Types import *
 class EDFProcessor(object):
 
     file_path = attr.field()
-
-    def create_signal_headers_from_metadata(self, parser):
+    edfwriter = attr.field(default=None)
+    _buffer = attr.field(default={REC_TYPE_ADC: 0, REC_TYPE_MOTION_GYRO: 0, REC_TYPE_MOTION_ACCL: 0})
+    _type_flags = attr.field(default={REC_TYPE_ADC: False, REC_TYPE_MOTION_GYRO: False, REC_TYPE_MOTION_ACCL: False})
+    _left_to_read = attr.field(default={REC_TYPE_ADC: 0, REC_TYPE_MOTION_GYRO: 0, REC_TYPE_MOTION_ACCL: 0})
+    _number_of_samples_in_second = attr.field(default={REC_TYPE_ADC: 0, REC_TYPE_MOTION_GYRO: 0, REC_TYPE_MOTION_ACCL: 0})
+    _channel_maps = attr.field(default={REC_TYPE_ADC: [], REC_TYPE_MOTION_GYRO: [], REC_TYPE_MOTION_ACCL: []})
+    _offsets = attr.field(default={REC_TYPE_ADC: 0, REC_TYPE_MOTION_GYRO: 0, REC_TYPE_MOTION_ACCL: 0})
+    def create_signal_headers_from_metadata(self, files_metadata):
         channel_map = np.zeros(
             shape=(NUMBER_OF_HW_ADC_CHANNELS + NUMBER_OF_HW_GYRO_CHANNELS + NUMBER_OF_HW_ACCL_CHANNELS,))
         channel_map[:] = np.nan
@@ -18,7 +24,7 @@ class EDFProcessor(object):
         digital_maxs = list(channel_map)
         digital_mins = list(channel_map)
         dimensions = list(channel_map)
-        for metadata in parser.metadata:
+        for metadata in files_metadata:
             channel_map[metadata['ChannelMap']] = metadata['ChannelMap']
             if metadata['Type'] == REC_TYPE_ADC:
                 for i in metadata['ChannelMap']:
@@ -77,59 +83,104 @@ class EDFProcessor(object):
                            'digital_min': digital_mins[cc]} for cc, ii in enumerate(channel_map) if ii>=0]
         return signal_headers
 
+    def _init_buffer(self, metadata, type, databatch):
+        self._buffer[type] = np.zeros(shape=(int(2 * databatch[type].shape[0]),), dtype=np.int16)
+        self._type_flags[type] = True
+        self._channel_maps[type] = metadata['ChannelMap']
+        self._number_of_samples_in_second[type] = metadata['SamplingRate'] * len(metadata['ChannelMap'])
 
-    def _prep_data_for_edf_batch_write(self, databatch, files_metadata, data_type):
-        sampling_rate = [x['SamplingRate'] for x in files_metadata if x['Type'] == data_type][0]
-        channel_map = [x['ChannelMap'] for x in files_metadata if x['Type'] == data_type][0]
-        split = np.split(databatch[data_type],
-                              indices_or_sections=[sampling_rate * len(channel_map) * (i + 1) for i in
-                                                   range(int(databatch[data_type].shape[0] /
-                                                             sampling_rate /
-                                                             len(channel_map)))])
-        # pad last value
-        if split[-1].shape[0] < sampling_rate * len(channel_map):
-            split[-1] = np.pad(split[-1],
-                                    pad_width=(0, sampling_rate * len(channel_map) - split[-1].shape[0]),
-                                    mode='constant',
-                                    constant_values=0)
-        return split
+    def _write_buffer(self, databatch):
+        for type in databatch.keys():
+            self._buffer[type][self._left_to_read[type]:self._left_to_read[type] + databatch[type].shape[0]] = \
+                databatch[type]
+            self._left_to_read[type] += databatch[type].shape[0]
 
-    def save_to_edf(self, data_generator, files_metadata, signal_headers):
-        # EDF needs [channels x samples]
-        edf_writer = pyedflib.EdfWriter(file_name=self.file_path, n_channels=len(signal_headers))
-        edf_writer.setSignalHeaders(signal_headers)
+    def _write_to_edf_from_buffer_one_type(self, type):
+        while self._left_to_read[type] >= self._number_of_samples_in_second[type]:
+            data_to_write = self._buffer[type][self._offsets[type]:
+                                                       self._offsets[type] +
+                                                       self._number_of_samples_in_second[type]]
 
-        for databatch in data_generator:
-            split_adc = []
-            split_gyro = []
-            split_accl = []
-            if REC_TYPE_ADC in databatch.keys():
-                split_adc = self._prep_data_for_edf_batch_write(databatch, files_metadata, REC_TYPE_ADC)
+            # reshape data for edf format
+            data_to_write = np.reshape(np.transpose(np.reshape(data_to_write,
+                                                               newshape=(-1, len(self._channel_maps[type])),
+                                                               order='C')),
+                                       newshape=(self._number_of_samples_in_second[type],), order='C')
 
-            if REC_TYPE_MOTION_GYRO in databatch.keys():
-                split_gyro = self._prep_data_for_edf_batch_write(databatch, files_metadata, REC_TYPE_MOTION_GYRO)
+            self._left_to_read[type] -= self._number_of_samples_in_second[type]
+            self._offsets[type] += self._number_of_samples_in_second[type]
 
-            if REC_TYPE_MOTION_ACCL in databatch.keys():
-                split_accl = self._prep_data_for_edf_batch_write(databatch, files_metadata, REC_TYPE_MOTION_ACCL)
-
-            for x in range(len(split_adc)):
-                if len(split_adc) > 0 and len(split_gyro) > 0 and len(split_accl) > 0: # adc, gyro, accl
-                    data_to_write = np.concatenate((split_adc[x], split_gyro[x], split_accl[x]))
-                elif  len(split_adc) > 0 and len(split_gyro) > 0 and len(split_accl) == 0: # adc, gyro
-                    data_to_write = np.concatenate((split_adc[x], split_gyro[x]))
-                elif len(split_adc) > 0 and len(split_gyro) == 0 and len(split_accl) > 0: # adc, accl
-                    data_to_write = np.concatenate((split_adc[x], split_accl[x]))
-                elif len(split_adc) == 0 and len(split_gyro) > 0 and len(split_accl) > 0: # gyro, accl
-                    data_to_write = np.concatenate((split_gyro[x], split_accl[x]))
-                elif len(split_adc) == 0 and len(split_gyro) == 0 and len(split_accl) > 0: # accl
-                    data_to_write = split_accl[x]
-                elif len(split_adc) == 0 and len(split_gyro) > 0 and len(split_accl) == 0: # gyro
-                    data_to_write = split_gyro[x]
-                elif len(split_adc) > 0 and len(split_gyro) == 0 and len(split_accl) == 0: # adc
-                    data_to_write = split_adc[x]
-
-                edf_writer.blockWriteDigitalShortSamples(data_to_write)
+            print('Left to read: %d' % self._left_to_read[type])
+            print('Offset: %d' % self._offsets[type])
+            self.edf_writer.blockWriteDigitalShortSamples(data_to_write)
             print('INFO: finished writing batch to EDF')
 
-        edf_writer.close()
+        # relocate leftover data to start of buffer
+        self._buffer[type][:self._left_to_read[type]] = self._buffer[type][self._offsets[type]:
+                                                                           self._offset[type]+self._left_to_read[type]]
+        # reset pointer
+        self._offset[type] = 0
+
+    def _write_to_edf_from_buffer_multimodal(self, databatch):
+        main_type = max(self._number_of_samples_in_second, key=self._number_of_samples_in_second.get)
+
+        while self._left_to_read[main_type] >= self._number_of_samples_in_second[main_type]:
+            data_to_write = {REC_TYPE_ADC: 0, REC_TYPE_MOTION_GYRO: 0, REC_TYPE_MOTION_ACCL: 0}
+            for type in databatch.keys():
+                data_to_write[type] = self._buffer[type][self._offsets[type]:self._offsets[type] +
+                                                                             self._number_of_samples_in_second[type]]
+
+            # reshape data for edf format
+                data_to_write[type] = np.reshape(np.transpose(np.reshape(data_to_write[type],
+                                                                   newshape=(-1,len(self._channel_maps[type])),
+                                                                   order='C')),
+                                           newshape=(self._number_of_samples_in_second[type],), order='C')
+
+            data_to_write = np.concatenate([data_to_write[type] for type in databatch.keys()])
+            self.edfwriter.blockWriteDigitalShortSamples(data_to_write)
+            print('INFO: finished writing batch to EDF')
+            for type in databatch.keys():
+                self._left_to_read[type] -= self._number_of_samples_in_second[type]
+                self._offsets[type] += self._number_of_samples_in_second[type]
+                print('Type: %s - Left to read: %d' % (type, self._left_to_read[type]))
+                print('Type: %s - Offset: %d' % (type, self._offsets[type]))
+
+
+        for type in databatch.keys():
+            # relocate leftover data to start of buffer
+            self._buffer[type][:self._left_to_read[type]] = self._buffer[type][self._offsets[type]:
+                                                                               self._offsets[type]+self._left_to_read[type]]
+            # reset pointer
+            self._offsets[type] = 0
+
+
+    def save_to_edf(self, data_generator, files_metadata):
+        flag_first_batch = True
+        for databatch in data_generator:
+            if flag_first_batch:
+                # prep signal headers and edf writer
+                signal_headers = self.create_signal_headers_from_metadata(files_metadata)
+                self.edfwriter = pyedflib.EdfWriter(file_name=self.file_path, n_channels=len(signal_headers))
+                self.edfwriter.setSignalHeaders(signal_headers)
+
+                # prepare buffer
+                for x in files_metadata:
+                    self._init_buffer(x, x['Type'], databatch)
+
+                flag_first_batch = False
+
+            # populate buffers
+            self._write_buffer(databatch)
+
+            # write to EDF from buffers
+            self._write_to_edf_from_buffer_multimodal(databatch)
+
+
+        # pad leftovers
+        for type in databatch.keys():
+            self._buffer[type][self._left_to_read[type]:] = 0
+        data_to_write = np.concatenate([self._buffer[type][:self._number_of_samples_in_second[type]] for type in databatch.keys()])
+        # write last samples
+        self.edfwriter.blockWriteDigitalShortSamples(data_to_write)
+        self.edfwriter.close()
         print('INFO: finished writing EDF file %s' % self.file_path)

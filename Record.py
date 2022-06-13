@@ -45,11 +45,11 @@ class Record(object):
                                enumerate(list('{0:016b}'.format(parsed.ChannelMap)))]
             parsed.ChannelMap = [x for x in parsed.ChannelMap if x]
         elif parsed.Type == REC_TYPE_MOTION:
-            if int(bin(parsed.ChannelMap).lstrip('0b')) == REC_TYPE_MOTION_GYRO:
+            if parsed.ChannelMap == REC_TYPE_MOTION_GYRO:
                 parsed.Type = REC_TYPE_MOTION_GYRO
-            elif int(bin(parsed.ChannelMap).lstrip('0b')) == REC_TYPE_MOTION_ACCL:
+            elif parsed.ChannelMap == REC_TYPE_MOTION_ACCL:
                 parsed.Type = REC_TYPE_MOTION_ACCL
-            elif int(bin(parsed.ChannelMap).lstrip('0b')) == REC_TYPE_MOTION_GYRO_AND_ACCL:
+            elif parsed.ChannelMap == REC_TYPE_MOTION_GYRO_AND_ACCL:
                 parsed.Type = REC_TYPE_MOTION_GYRO_AND_ACCL
 
         #print('Length=%d, Sor=%d' % (parsed.Length, parsed.Sor))

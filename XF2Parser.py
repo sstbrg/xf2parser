@@ -107,7 +107,7 @@ class Parser(object):
                             flag_gyro_metadata = True
                             flag_accl_metadata = True
 
-                        data_from_record = np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)], dtype='<u2')
+                        data_from_record = np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)], dtype='>u2')
                         #data_from_record = np.reshape(data_from_record,
                         #                              newshape=(int(data_from_record.shape[0]/NUMBER_OF_HW_GYRO_CHANNELS), NUMBER_OF_HW_GYRO_CHANNELS),
                         #                              order='C')
@@ -153,7 +153,7 @@ class Parser(object):
                         data[REC_TYPE_MOTION_ACCL][offset[REC_TYPE_MOTION_ACCL]:offset[REC_TYPE_MOTION_ACCL] +
                                                                                 int((rec.header.Length - 6)/2)] = \
                             np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)],
-                                          dtype='<u2')
+                                          dtype='>u2')
 
                         #data_from_record = np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)],
                         #                  dtype='<u2')
@@ -176,7 +176,7 @@ class Parser(object):
                         data[REC_TYPE_MOTION_GYRO][offset[REC_TYPE_MOTION_GYRO]:offset[REC_TYPE_MOTION_GYRO] +
                         int((rec.header.Length - 6)/2)] = \
                             np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)],
-                                          dtype='<u2')
+                                          dtype='>u2')
 
                         #data_from_record = np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)],
                         #                  dtype='<u2')
@@ -242,7 +242,7 @@ class Parser(object):
                     REC_TYPE_MOTION_ACCL: np.empty(accl_data_shape)}
             offset = {REC_TYPE_ADC: 0, REC_TYPE_MOTION_GYRO: 0, REC_TYPE_MOTION_ACCL: 0}
 
-            yield data_to_yield
+            yield (data_to_yield, filepath)
 
             #if save_prefix is None:
             #    self.data = data

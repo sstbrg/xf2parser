@@ -43,7 +43,7 @@ class Record(object):
         if parsed.Type == REC_TYPE_ADC:
             parsed.ChannelMap = [num if val == '1' else None for num, val in
                                enumerate(list('{0:016b}'.format(parsed.ChannelMap)))]
-            parsed.ChannelMap = [x for x in parsed.ChannelMap if x]
+            parsed.ChannelMap = [x for x in parsed.ChannelMap if x is not None]
         elif parsed.Type == REC_TYPE_MOTION:
             if parsed.ChannelMap == REC_TYPE_MOTION_GYRO:
                 parsed.Type = REC_TYPE_MOTION_GYRO

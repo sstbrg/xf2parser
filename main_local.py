@@ -7,7 +7,7 @@ local_work_directory = r'C:\Users\Stas\OneDrive - xtrodes\Data\hw 1.2 fw 1.3\HW_
 
 # parsing
 parser = Parser(work_directory=local_work_directory)
-data_gen = parser.process_files(exclude=[])
+data_gen = parser.process_files(exclude=())
 
 # edf creation part
 edfer = EDFProcessor(file_path=r'result\20220621_02C3_HW_1.2_FW_14.6.0.25_sine_31hz_1mv.edf')

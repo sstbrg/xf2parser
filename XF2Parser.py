@@ -12,17 +12,12 @@ class Parser(object):
                                REC_TYPE_MOTION_ACCL: None})
     metadata = attr.field(default=list())
 
-    def process_files(self, exclude=[REC_TYPE_MOTION_GYRO_AND_ACCL]):
+    def process_files(self, exclude=()):
         file_list = natsorted([x for x in glob(os.path.join(self.work_directory, '*'+FILE_FORMAT))])
         # every file usually has 124560 samples of adc data and 94545 samples of gyro data
 
         # infer final array size, usually there are 1038 adc records of 3840 bytes per file and 369 motion records of size 510 bytes
 
-        #if save_prefix is None:
-        #    adc_data_shape = (int((3840/2)*2000*len(file_list)), NUMBER_OF_HW_ADC_CHANNELS) #(int(np.ceil(sum([sum([(rec.header.Length-4)/2/NUMBER_OF_HW_ADC_CHANNELS if rec.header.Type==REC_TYPE_ADC else 0 for rec in x.records]) for x in files]))), NUMBER_OF_HW_ADC_CHANNELS)
-        #    gyro_data_shape = (int((510/2)*2000*len(file_list)), NUMBER_OF_HW_GYRO_CHANNELS) #(int(np.ceil(sum([sum([(rec.header.Length-4)/2/NUMBER_OF_HW_ADC_CHANNELS if rec.header.Type==REC_TYPE_MOTION else 0 for rec in x.records]) for x in files]))), NUMBER_OF_HW_MOTION_CHANNELS)
-        #    accl_data_shape = (int((510/2)*2000*len(file_list)), NUMBER_OF_HW_ACCL_CHANNELS)
-        #else:
         adc_data_shape = (int((3840/2)*2000) * NUMBER_OF_HW_ADC_CHANNELS, )
         gyro_data_shape = (int((510/2)*2000) * NUMBER_OF_HW_GYRO_CHANNELS, )
         accl_data_shape = (int((510/2)*2000) * NUMBER_OF_HW_ACCL_CHANNELS, )
@@ -41,14 +36,6 @@ class Parser(object):
         flag_accl_metadata = False
 
         for c, filepath in enumerate(file_list):
-
-            # prep files for result saving
-            #save_file_adc_path = save_prefix + '_adc_{num}.npy'.format(num=c)
-            #save_file_adc = open(save_file_adc_path, 'wb')
-            #save_file_gyro_path = save_prefix + '_gyro_{num}.npy'.format(num=c)
-            #save_file_gyro = open(save_file_gyro_path, 'wb')
-            #save_file_accl_path = save_prefix + '_accl_{num}.npy'.format(num=c)
-            #save_file_accl = open(save_file_accl_path, 'wb')
 
             print('INFO: collecting data from records of %s' % filepath)
             f = File(filepath=filepath)
@@ -180,28 +167,11 @@ class Parser(object):
 
             # remove unrelevant data
             if not flag_adc_metadata:
-                #data[REC_TYPE_ADC] = []
                 data.pop(REC_TYPE_ADC)
             if not flag_gyro_metadata:
-                #data[REC_TYPE_MOTION_GYRO] = []
                 data.pop(REC_TYPE_MOTION_GYRO)
             if not flag_accl_metadata:
-                #data[REC_TYPE_MOTION_ACCL] = []
                 data.pop(REC_TYPE_MOTION_ACCL)
-            # transpose data
-            #if transpose_data:
-            #    if flag_adc_metadata:
-            #        data[REC_TYPE_ADC] = np.transpose(data[REC_TYPE_ADC])
-            #    if flag_gyro_metadata:
-            #        data[REC_TYPE_MOTION_GYRO] = np.transpose(data[REC_TYPE_MOTION_GYRO])
-            #    if flag_accl_metadata:
-            #        data[REC_TYPE_MOTION_ACCL] = np.transpose(data[REC_TYPE_MOTION_ACCL])
-
-            #if save_prefix is not None:
-            #    if flag_adc_metadata:
-            #        np.savez(save_file_adc, data_adc=data[REC_TYPE_ADC], allow_pickle=False)
-
-                #save_file.flush()
 
             data_to_yield = data
             data = {REC_TYPE_ADC: np.empty(adc_data_shape),
@@ -210,14 +180,6 @@ class Parser(object):
             offset = {REC_TYPE_ADC: 0, REC_TYPE_MOTION_GYRO: 0, REC_TYPE_MOTION_ACCL: 0}
 
             yield (data_to_yield, filepath)
-
-            #if save_prefix is None:
-            #    self.data = data
-            #else:
-            #    save_file_adc.close()
-            #    save_file_gyro.close()
-            #    save_file_accl.close()
-            #print('\n')
 
         print('INFO: finished collecting data\n')
 

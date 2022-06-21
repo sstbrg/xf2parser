@@ -60,16 +60,18 @@ class Parser(object):
             # we extract the data per record
             num_of_records = len(f.records)
             print('INFO: there are %d records' % num_of_records)
+
+            d=list()
+
             for c, rec in enumerate(f.records):
                 # notify about errors
                 if ERROR_WRONG_CRC in rec.errors:
-                    print('ERROR: record %d has a wrong CRC' % c)
+                    print('ERROR: Skipping record data. Record %d has a wrong CRC' % c)
                 if ERROR_WRONG_EOR in rec.errors:
-                    print('WARNING: start of record (SOR) in record %d does not point to an actual record. ' 
+                    print('WARNING: Skipping record data. Start of record (SOR) in record %d does not point to an actual record. ' 
                           'This is most likely becuase the SOR byte is part of the data.' % c)
                 if ERROR_WRONG_SOR_IN_HEADER in rec.errors:
-                    print('ERROR: wrong start of record (SOR) byte found in record header')
-
+                    print('ERROR: Skipping record data. Wrong start of record (SOR) byte found in record header')
                 if ERROR_WRONG_EOR not in rec.errors:
                     data_offset = int(rec.offset + rec.HeaderSize)
                     if rec.header.Type == REC_TYPE_ADC and REC_TYPE_ADC not in exclude:
@@ -77,23 +79,25 @@ class Parser(object):
                         if not flag_adc_metadata:
                             self.metadata.append({'Record': c, 'Type': REC_TYPE_ADC,
                                                   'ChannelMap': rec.header.ChannelMap,
-                                                  'SamplingRate': rec.header.SampleRate})
+                                                  'SamplingRate': rec.header.SampleRate,
+                                                  'ADCOffset': offset[REC_TYPE_ADC],
+                                                  'FileContentOffset': data_offset})
                             flag_adc_metadata = True
 
                         data[REC_TYPE_ADC][offset[REC_TYPE_ADC]:offset[REC_TYPE_ADC] + int((rec.header.Length - 6)/2)] = \
                             np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)],
                                           dtype='<u2')
 
-                        #num_of_active_channels = sum(x is not None for x in rec.header.ChannelMap)
-                        #data[REC_TYPE_ADC][offset[REC_TYPE_ADC]:offset[REC_TYPE_ADC] + int(
-                        #    (rec.header.Length - 6) / 2 / num_of_active_channels),
-                        #rec.header.ChannelMap] = np.reshape(
-                        #    np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)],
-                        #                  dtype='<u2'),
-                        #    newshape=(
-                        #    int((rec.header.Length - 6) / 2 / num_of_active_channels), num_of_active_channels),
-                        #    order='C')
                         offset[REC_TYPE_ADC] += int((rec.header.Length - 6) / 2)
+
+                        #if c==1774 or c==1775:
+                        #    d.append(np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)],
+                        #                  dtype='<u2'))
+
+                        #if c==1776:
+                        #    import matplotlib.pyplot as plt
+                        #    plt.plot(np.reshape(np.concatenate(d), newshape=(-1, 16), order='C')[:, 0])
+                        #    plt.show()
 
                     elif rec.header.Type == REC_TYPE_MOTION_GYRO_AND_ACCL and REC_TYPE_MOTION_GYRO_AND_ACCL not in exclude:
                         # save metadata
@@ -101,6 +105,7 @@ class Parser(object):
                             self.metadata.append({'Record': c, 'Type': REC_TYPE_MOTION_GYRO,
                                                   'ChannelMap': [16, 17, 18],
                                                   'SamplingRate': rec.header.SampleRate})
+
                             self.metadata.append(({'Record': c, 'Type': REC_TYPE_MOTION_ACCL,
                                                    'ChannelMap': [19, 20, 21],
                                                    'SamplingRate': rec.header.SampleRate}))
@@ -108,35 +113,16 @@ class Parser(object):
                             flag_accl_metadata = True
 
                         data_from_record = np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)], dtype='>u2')
-                        #data_from_record = np.reshape(data_from_record,
-                        #                              newshape=(int(data_from_record.shape[0]/NUMBER_OF_HW_GYRO_CHANNELS), NUMBER_OF_HW_GYRO_CHANNELS),
-                        #                              order='C')
 
                         data[REC_TYPE_MOTION_GYRO][offset[REC_TYPE_MOTION_GYRO]:offset[REC_TYPE_MOTION_GYRO]
                                                                                 +int((rec.header.Length - 6) / 4)] = \
                             data_from_record[0::2] #even positions
-                            #np.reshape(data_from_record[0::2], newshape=(-1, 0), order='C')
 
 
 
                         data[REC_TYPE_MOTION_ACCL][offset[REC_TYPE_MOTION_ACCL]:offset[REC_TYPE_MOTION_ACCL] +
                                                                                 int((rec.header.Length - 6) / 4)] = \
                             data_from_record[1::2] #odd position
-                            #np.reshape(data_from_record[1::2], newshape=(1, -1), order='C')
-
-
-
-                        #newshape = (int((rec.header.Length - 6) / 2 / (NUMBER_OF_HW_ACCL_CHANNELS+NUMBER_OF_HW_GYRO_CHANNELS)),
-                        #                  (NUMBER_OF_HW_ACCL_CHANNELS+NUMBER_OF_HW_GYRO_CHANNELS))
-                        #gyro_with_accl_data = np.reshape(data_from_record, newshape=newshape, order='C')
-
-                        #data[REC_TYPE_MOTION_GYRO][offset[REC_TYPE_MOTION_GYRO]:offset[REC_TYPE_MOTION_GYRO] + int(
-                        #    (rec.header.Length - 6) / 2 / (NUMBER_OF_HW_GYRO_CHANNELS)),
-                        #:] = gyro_with_accl_data[:, :NUMBER_OF_HW_GYRO_CHANNELS]
-
-                        #data[REC_TYPE_MOTION_ACCL][offset[REC_TYPE_MOTION_ACCL]:offset[REC_TYPE_MOTION_ACCL] + int(
-                        #    (rec.header.Length - 6) / 2 / (NUMBER_OF_HW_ACCL_CHANNELS)),
-                        #:] = gyro_with_accl_data[:, NUMBER_OF_HW_ACCL_CHANNELS:]
 
                         offset[REC_TYPE_MOTION_GYRO] += int((rec.header.Length - 6) / 4)
                         offset[REC_TYPE_MOTION_ACCL] += int((rec.header.Length - 6) / 4)
@@ -155,14 +141,6 @@ class Parser(object):
                             np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)],
                                           dtype='>u2')
 
-                        #data_from_record = np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)],
-                        #                  dtype='<u2')
-                        #newshape = (int((rec.header.Length - 6) / 2 / NUMBER_OF_HW_ACCL_CHANNELS),
-                        #              NUMBER_OF_HW_ACCL_CHANNELS)
-                        #accl_data = np.reshape(data_from_record, newshape=newshape, order='C')
-
-                        #data[REC_TYPE_MOTION_ACCL][offset[REC_TYPE_MOTION_ACCL]:offset[REC_TYPE_MOTION_ACCL] + int(
-                        #    (rec.header.Length - 6) / 2 / NUMBER_OF_HW_ACCL_CHANNELS), :] = accl_data
                         offset[REC_TYPE_MOTION_ACCL] += int((rec.header.Length - 6) / 2)
 
                     elif rec.header.Type == REC_TYPE_MOTION_GYRO and REC_TYPE_MOTION_GYRO not in exclude:
@@ -178,28 +156,16 @@ class Parser(object):
                             np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)],
                                           dtype='>u2')
 
-                        #data_from_record = np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)],
-                        #                  dtype='<u2')
-                        #newshape = (int((rec.header.Length - 6) / 2 / NUMBER_OF_HW_GYRO_CHANNELS),
-                        #              NUMBER_OF_HW_GYRO_CHANNELS)
-                        #gyro_data = np.reshape(data_from_record, newshape=newshape, order='C')
-
-                        #data[REC_TYPE_MOTION_GYRO][offset[REC_TYPE_MOTION_GYRO]:offset[REC_TYPE_MOTION_GYRO] + int(
-                        #    (rec.header.Length - 6) / 2 / NUMBER_OF_HW_GYRO_CHANNELS), :] = gyro_data
                         offset[REC_TYPE_MOTION_GYRO] += int((rec.header.Length - 6) / 2)
 
 
             # trim zeros from tail
             if flag_adc_metadata:
-                #data[REC_TYPE_ADC] = np.trim_zeros(data[REC_TYPE_ADC], trim='b')
                 data[REC_TYPE_ADC] = data[REC_TYPE_ADC][:offset[REC_TYPE_ADC]]
-
             if flag_gyro_metadata:
                 data[REC_TYPE_MOTION_GYRO] = data[REC_TYPE_MOTION_GYRO][:offset[REC_TYPE_MOTION_GYRO]]
-                #data[REC_TYPE_MOTION_GYRO] = data[REC_TYPE_MOTION_GYRO][~np.all(data[REC_TYPE_MOTION_GYRO] == 0)]
             if flag_accl_metadata:
                 data[REC_TYPE_MOTION_ACCL] = data[REC_TYPE_MOTION_ACCL][:offset[REC_TYPE_MOTION_ACCL]]
-                #data[REC_TYPE_MOTION_ACCL] = data[REC_TYPE_MOTION_ACCL][~np.all(data[REC_TYPE_MOTION_ACCL] == 0)]
 
             # ADC: convert to signed
             if flag_adc_metadata:
@@ -236,6 +202,7 @@ class Parser(object):
             #        np.savez(save_file_adc, data_adc=data[REC_TYPE_ADC], allow_pickle=False)
 
                 #save_file.flush()
+
             data_to_yield = data
             data = {REC_TYPE_ADC: np.empty(adc_data_shape),
                     REC_TYPE_MOTION_GYRO: np.empty(gyro_data_shape),

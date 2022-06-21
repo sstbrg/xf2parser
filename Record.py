@@ -74,10 +74,6 @@ class Record(object):
             self.offset + self.HeaderSize + self.header.Length - 6 + self.EORSize - 1] != END_OF_RECORD:
             errors.append(ERROR_WRONG_EOR)
 
-        #if self.eor.CRC != calc_crc16(content[self.offset + 1:
-        #    self.offset + self.HeaderSize + 3840]):
-        #    self.errors.append(ERROR_WRONG_CRC)
-
         return errors
 
 

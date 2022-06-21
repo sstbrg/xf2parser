@@ -46,7 +46,7 @@ print('INFO: done pulling files')
 
 # parsing
 parser = Parser(work_directory=local_work_directory)
-data_gen = parser.process_files(exclude=[REC_TYPE_MOTION_GYRO_AND_ACCL, REC_TYPE_MOTION_GYRO, REC_TYPE_MOTION_ACCL])
+data_gen = parser.process_files(exclude=[])
 
 # edf creation part
 edfer = EDFProcessor(file_path=local_output_path)

@@ -110,13 +110,13 @@ class Parser(object):
 
                         data[REC_TYPE_MOTION_GYRO][offset[REC_TYPE_MOTION_GYRO]:offset[REC_TYPE_MOTION_GYRO]
                                                                                 +int((rec.header.Length - 6) / 4)] = \
-                            data_from_record[0::2] #even positions
+                            np.reshape(np.reshape(data_from_record, newshape=(-1, 3))[1::2], newshape=(1,-1))
 
 
 
                         data[REC_TYPE_MOTION_ACCL][offset[REC_TYPE_MOTION_ACCL]:offset[REC_TYPE_MOTION_ACCL] +
                                                                                 int((rec.header.Length - 6) / 4)] = \
-                            data_from_record[1::2] #odd position
+                            np.reshape(np.reshape(data_from_record, newshape=(-1, 3))[0::2], newshape=(1,-1))
 
                         offset[REC_TYPE_MOTION_GYRO] += int((rec.header.Length - 6) / 4)
                         offset[REC_TYPE_MOTION_ACCL] += int((rec.header.Length - 6) / 4)

@@ -1,12 +1,48 @@
 {
-  "name": "xf2parser-master",
+  "name": "xf2parser-master-hw12-fw13",
   "stages": {
-    "xf2parser-xf2-to-npy": {
+    "xf2parser-1": {
       "input": {
         "secrets": [ ],
         "vars": {
-          "INPUT": "s3://x-cognito/xf2parser/dau-13-6/",
-          "OUTPUT": "s3://x-cognito/xf2parser/dau-13-6/dau-13-6.edf"
+          "INPUT": "s3://x-cognito/data for 1.3 HW and FW testing/HW_1.2_FW_1.3/20220621_02C3_HW_1.2_FW_14.6.0.25_dummy/RECORDS/",
+          "OUTPUT": "s3://x-cognito/data for 1.3 HW and FW testing/HW_1.2_FW_1.3/20220621_02C3_HW_1.2_FW_14.6.0.25_dummy.edf"
+        },
+        "version": {
+          "image": "441546564921.dkr.ecr.us-east-1.amazonaws.com/xf2parser:latest"
+        }
+      }
+    },
+    "xf2parser-2": {
+      "input": {
+        "secrets": [ ],
+        "vars": {
+          "INPUT": "s3://x-cognito/data for 1.3 HW and FW testing/HW_1.2_FW_1.3/20220621_02C3_HW_1.2_FW_14.6.0.25_dummy_session_2/RECORDS/",
+          "OUTPUT": "s3://x-cognito/data for 1.3 HW and FW testing/HW_1.2_FW_1.3/20220621_02C3_HW_1.2_FW_14.6.0.25_dummy_session_2.edf"
+        },
+        "version": {
+          "image": "441546564921.dkr.ecr.us-east-1.amazonaws.com/xf2parser:latest"
+        }
+      }
+    },
+    "xf2parser-3": {
+      "input": {
+        "secrets": [ ],
+        "vars": {
+          "INPUT": "s3://x-cognito/data for 1.3 HW and FW testing/HW_1.2_FW_1.3/20220621_02C3_HW_1.2_FW_14.6.0.25_sine_31hz_1mv/RECORDS/",
+          "OUTPUT": "s3://x-cognito/data for 1.3 HW and FW testing/HW_1.2_FW_1.3/20220621_02C3_HW_1.2_FW_14.6.0.25_sine_31hz_1mv.edf"
+        },
+        "version": {
+          "image": "441546564921.dkr.ecr.us-east-1.amazonaws.com/xf2parser:latest"
+        }
+      }
+    },
+    "xf2parser-4": {
+      "input": {
+        "secrets": [ ],
+        "vars": {
+          "INPUT": "s3://x-cognito/data for 1.3 HW and FW testing/HW_1.2_FW_1.3/20220621_7E8C_HW_1.2_FW_14.6.0.25_sine_31hz_1mv/RECORDS/",
+          "OUTPUT": "s3://x-cognito/data for 1.3 HW and FW testing/HW_1.2_FW_1.3/20220621_7E8C_HW_1.2_FW_14.6.0.25_sine_31hz_1mv.edf"
         },
         "version": {
           "image": "441546564921.dkr.ecr.us-east-1.amazonaws.com/xf2parser:latest"

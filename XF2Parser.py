@@ -48,8 +48,6 @@ class Parser(object):
             num_of_records = len(f.records)
             print('INFO: there are %d records' % num_of_records)
 
-            d=list()
-
             for c, rec in enumerate(f.records):
                 # notify about errors
                 if ERROR_WRONG_CRC in rec.errors:
@@ -67,6 +65,7 @@ class Parser(object):
                             self.metadata.append({'Record': c, 'Type': REC_TYPE_ADC,
                                                   'ChannelMap': rec.header.ChannelMap,
                                                   'SamplingRate': rec.header.SampleRate,
+                                                  'PacketIndex': rec.header.PacketIndex,
                                                   'ADCOffset': offset[REC_TYPE_ADC],
                                                   'FileContentOffset': data_offset})
                             flag_adc_metadata = True
@@ -91,15 +90,23 @@ class Parser(object):
                         if not flag_gyro_metadata or not flag_accl_metadata:
                             self.metadata.append({'Record': c, 'Type': REC_TYPE_MOTION_GYRO,
                                                   'ChannelMap': [16, 17, 18],
-                                                  'SamplingRate': rec.header.SampleRate})
+                                                  'SamplingRate': rec.header.SampleRate,
+                                                  'PacketIndex': rec.header.PacketIndex,
+                                                  'ADCOffset': offset[REC_TYPE_ADC],
+                                                  'FileContentOffset': data_offset})
 
-                            self.metadata.append(({'Record': c, 'Type': REC_TYPE_MOTION_ACCL,
+                            self.metadata.append({'Record': c, 'Type': REC_TYPE_MOTION_ACCL,
                                                    'ChannelMap': [19, 20, 21],
-                                                   'SamplingRate': rec.header.SampleRate}))
+                                                   'SamplingRate': rec.header.SampleRate,
+                                                   'PacketIndex': rec.header.PacketIndex,
+                                                   'ADCOffset': offset[REC_TYPE_ADC],
+                                                   'FileContentOffset': data_offset})
+
                             flag_gyro_metadata = True
                             flag_accl_metadata = True
 
-                        data_from_record = np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)], dtype='>u2')
+                        data_from_record = np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)],
+                                                         dtype='>i2')
 
                         data[REC_TYPE_MOTION_GYRO][offset[REC_TYPE_MOTION_GYRO]:offset[REC_TYPE_MOTION_GYRO]
                                                                                 +int((rec.header.Length - 6) / 4)] = \
@@ -119,14 +126,17 @@ class Parser(object):
                         if not flag_accl_metadata:
                             self.metadata.append({'Record': c, 'Type': REC_TYPE_MOTION_ACCL,
                                                   'ChannelMap': [19, 20, 21],
-                                                  'SamplingRate': rec.header.SampleRate})
+                                                  'SamplingRate': rec.header.SampleRate,
+                                                  'PacketIndex': rec.header.PacketIndex,
+                                                  'ADCOffset': offset[REC_TYPE_ADC],
+                                                  'FileContentOffset': data_offset})
                             flag_accl_metadata = True
 
 
                         data[REC_TYPE_MOTION_ACCL][offset[REC_TYPE_MOTION_ACCL]:offset[REC_TYPE_MOTION_ACCL] +
                                                                                 int((rec.header.Length - 6)/2)] = \
                             np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)],
-                                          dtype='>u2')
+                                          dtype='>i2')
 
                         offset[REC_TYPE_MOTION_ACCL] += int((rec.header.Length - 6) / 2)
 
@@ -135,16 +145,18 @@ class Parser(object):
                         if not flag_gyro_metadata:
                             self.metadata.append({'Record': c, 'Type': REC_TYPE_MOTION_GYRO,
                                                   'ChannelMap': [16, 17, 18],
-                                                  'SamplingRate': rec.header.SampleRate})
+                                                  'SamplingRate': rec.header.SampleRate,
+                                                  'PacketIndex': rec.header.PacketIndex,
+                                                  'ADCOffset': offset[REC_TYPE_ADC],
+                                                  'FileContentOffset': data_offset})
                             flag_gyro_metadata = True
 
                         data[REC_TYPE_MOTION_GYRO][offset[REC_TYPE_MOTION_GYRO]:offset[REC_TYPE_MOTION_GYRO] +
                         int((rec.header.Length - 6)/2)] = \
                             np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)],
-                                          dtype='>u2')
+                                          dtype='>i2')
 
                         offset[REC_TYPE_MOTION_GYRO] += int((rec.header.Length - 6) / 2)
-
 
             # trim zeros from tail
             if flag_adc_metadata:
@@ -158,12 +170,12 @@ class Parser(object):
             if flag_adc_metadata:
                 data[REC_TYPE_ADC] = data[REC_TYPE_ADC] - np.float_power(2, ADC_BITS - 1) #ADC_RESOLUTION * (data[REC_TYPE_ADC] - np.float_power(2, ADC_BITS - 1))
                 data[REC_TYPE_ADC] = data[REC_TYPE_ADC].astype(np.int16)
-            if flag_gyro_metadata:
-                data[REC_TYPE_MOTION_GYRO] = data[REC_TYPE_MOTION_GYRO] - np.float_power(2, IMU_BITS - 1)
-                data[REC_TYPE_MOTION_GYRO] = data[REC_TYPE_MOTION_GYRO].astype(np.int16)
-            if flag_accl_metadata:
-                data[REC_TYPE_MOTION_ACCL] = data[REC_TYPE_MOTION_ACCL] - np.float_power(2, IMU_BITS - 1)
-                data[REC_TYPE_MOTION_ACCL] = data[REC_TYPE_MOTION_ACCL].astype(np.int16)
+            #if flag_gyro_metadata:
+            #    data[REC_TYPE_MOTION_GYRO] = data[REC_TYPE_MOTION_GYRO] - np.float_power(2, IMU_BITS - 1)
+            #    data[REC_TYPE_MOTION_GYRO] = data[REC_TYPE_MOTION_GYRO].astype(np.int16)
+            #if flag_accl_metadata:
+            #    data[REC_TYPE_MOTION_ACCL] = data[REC_TYPE_MOTION_ACCL] - np.float_power(2, IMU_BITS - 1)
+            #    data[REC_TYPE_MOTION_ACCL] = data[REC_TYPE_MOTION_ACCL].astype(np.int16)
 
             # remove unrelevant data
             if not flag_adc_metadata:

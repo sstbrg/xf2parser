@@ -131,7 +131,7 @@ class EDFProcessor(object):
             # most likely gyro and accl samples will be written first
             data_to_write = {REC_TYPE_ADC: 0, REC_TYPE_MOTION_GYRO: 0, REC_TYPE_MOTION_ACCL: 0}
             #min_type = min(self._number_of_samples_in_second, key=self._number_of_samples_in_second.get)
-            while any([self._left_to_read[type] >= self._number_of_samples_in_second[type] for type in self._types]):
+            while all([self._left_to_read[type] >= self._number_of_samples_in_second[type] for type in self._types]):
                 #self._write_to_edf_from_buffer_multimodal(databatch)
                 for type in self._types:
                     data_to_write[type] = self._buffer[type][self._read_offset[type]:self._read_offset[type]+self._number_of_samples_in_second[type]]
@@ -185,7 +185,7 @@ class EDFProcessor(object):
                                                                                             self._read_offset[type] +
                                                                                             self._left_to_read[type]]
                 # pad with zeros anything above leftovers
-                self._buffer[type][self._left_to_read[type]:] = 0
+                self._buffer[type][self._left_to_read[type]:] = 10000
 
                 # reset pointer for data read
                 self._read_offset[type] = 0

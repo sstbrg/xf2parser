@@ -24,8 +24,8 @@ class Parser(object):
 
         # create the arrays
         data = {REC_TYPE_ADC: np.zeros(adc_data_shape, dtype=np.uint16),
-                REC_TYPE_MOTION_GYRO: np.zeros(gyro_data_shape, dtype=np.uint16),
-                REC_TYPE_MOTION_ACCL: np.zeros(accl_data_shape, dtype=np.uint16)}
+                REC_TYPE_MOTION_GYRO: np.zeros(gyro_data_shape, dtype=np.int16),
+                REC_TYPE_MOTION_ACCL: np.zeros(accl_data_shape, dtype=np.int16)}
 
         # extract data
         offset = {REC_TYPE_ADC: 0, REC_TYPE_MOTION_GYRO: 0, REC_TYPE_MOTION_ACCL: 0}
@@ -66,7 +66,6 @@ class Parser(object):
                                                   'ChannelMap': rec.header.ChannelMap,
                                                   'SamplingRate': rec.header.SampleRate,
                                                   'PacketIndex': rec.header.PacketIndex,
-                                                  'ADCOffset': offset[REC_TYPE_ADC],
                                                   'FileContentOffset': data_offset})
                             flag_adc_metadata = True
 
@@ -92,14 +91,12 @@ class Parser(object):
                                                   'ChannelMap': [16, 17, 18],
                                                   'SamplingRate': rec.header.SampleRate,
                                                   'PacketIndex': rec.header.PacketIndex,
-                                                  'ADCOffset': offset[REC_TYPE_ADC],
                                                   'FileContentOffset': data_offset})
 
                             self.metadata.append({'Record': c, 'Type': REC_TYPE_MOTION_ACCL,
                                                    'ChannelMap': [19, 20, 21],
                                                    'SamplingRate': rec.header.SampleRate,
                                                    'PacketIndex': rec.header.PacketIndex,
-                                                   'ADCOffset': offset[REC_TYPE_ADC],
                                                    'FileContentOffset': data_offset})
 
                             flag_gyro_metadata = True
@@ -128,7 +125,6 @@ class Parser(object):
                                                   'ChannelMap': [19, 20, 21],
                                                   'SamplingRate': rec.header.SampleRate,
                                                   'PacketIndex': rec.header.PacketIndex,
-                                                  'ADCOffset': offset[REC_TYPE_ADC],
                                                   'FileContentOffset': data_offset})
                             flag_accl_metadata = True
 
@@ -147,7 +143,6 @@ class Parser(object):
                                                   'ChannelMap': [16, 17, 18],
                                                   'SamplingRate': rec.header.SampleRate,
                                                   'PacketIndex': rec.header.PacketIndex,
-                                                  'ADCOffset': offset[REC_TYPE_ADC],
                                                   'FileContentOffset': data_offset})
                             flag_gyro_metadata = True
 

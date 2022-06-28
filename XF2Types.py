@@ -53,10 +53,12 @@ class RecordStruct(Struct):
             'Sor' / Int8ul,
             'Type' / Int8ul,
             'UnixTime' / Int32ul,
+            'UnixMs' / Int16ul,
             'Length' / Int16ul,
             'PacketIndex' / Int16ul,
             'ChannelMap' / Int16ul,
-            'SampleRate' / Int16ul))
+            'SampleRate' / Int16ul,
+            'DownSamplingFactor' / Int8ul))
     #Data = Struct('Data' / Array(header['Length'], Int8ul))
     EOR = attr.ib(default=Struct(
             'CRC' / Int16ul,

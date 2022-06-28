@@ -21,10 +21,10 @@ clientconfig = Config(
 )
 client = boto3.client('s3', config=clientconfig)
 
-
+# pull environmental variables
 input = urlparse(os.environ.get('INPUT',
-                                 's3://x-cognito/data for 1.3 HW and FW testing/HW_1.2_FW_1.3/20220621_7E8C_HW_1.2_FW_14.6.0.25_sine_31hz_1mv/RECORDS/'))
-output = urlparse(os.environ.get('OUTPUT', 'c:/text/test.edf'))
+                                 's3://x-cognito/data for 1.3 HW and FW testing/HW_1.2_FW_1.3/20220621_02C3_HW_1.2_FW_14.6.0.25_dummy_session_2/RECORDS/'))
+output = urlparse(os.environ.get('OUTPUT', 's3://x-cognito/data for 1.3 HW and FW testing/HW_1.2_FW_1.3/20220621_02C3_HW_1.2_FW_14.6.0.25_dummy_session_2/20220621_02C3_HW_1.2_FW_14.6.0.25_dummy_session_2.edf'))
 
 local_work_directory = 'data'
 if not os.path.isdir(local_work_directory):

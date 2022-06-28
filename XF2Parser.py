@@ -69,11 +69,11 @@ class Parser(object):
                                                   'FileContentOffset': data_offset})
                             flag_adc_metadata = True
 
-                        data[REC_TYPE_ADC][offset[REC_TYPE_ADC]:offset[REC_TYPE_ADC] + int((rec.header.Length - 6)/2)] = \
-                            np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)],
+                        data[REC_TYPE_ADC][offset[REC_TYPE_ADC]:offset[REC_TYPE_ADC] + int((rec.header.Length - 6-1)/2)] = \
+                            np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6-1)],
                                           dtype='<u2')
 
-                        offset[REC_TYPE_ADC] += int((rec.header.Length - 6) / 2)
+                        offset[REC_TYPE_ADC] += int((rec.header.Length - 6-1) / 2)
 
                         #if c==1774 or c==1775:
                         #    d.append(np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)],
@@ -102,21 +102,21 @@ class Parser(object):
                             flag_gyro_metadata = True
                             flag_accl_metadata = True
 
-                        data_from_record = np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)],
+                        data_from_record = np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6-1)],
                                                          dtype='>i2')
 
                         data[REC_TYPE_MOTION_GYRO][offset[REC_TYPE_MOTION_GYRO]:offset[REC_TYPE_MOTION_GYRO]
-                                                                                +int((rec.header.Length - 6) / 4)] = \
+                                                                                +int((rec.header.Length - 6-1) / 4)] = \
                             np.reshape(np.reshape(data_from_record, newshape=(-1, 3))[1::2], newshape=(1,-1))
 
 
 
                         data[REC_TYPE_MOTION_ACCL][offset[REC_TYPE_MOTION_ACCL]:offset[REC_TYPE_MOTION_ACCL] +
-                                                                                int((rec.header.Length - 6) / 4)] = \
+                                                                                int((rec.header.Length - 6-1) / 4)] = \
                             np.reshape(np.reshape(data_from_record, newshape=(-1, 3))[0::2], newshape=(1,-1))
 
-                        offset[REC_TYPE_MOTION_GYRO] += int((rec.header.Length - 6) / 4)
-                        offset[REC_TYPE_MOTION_ACCL] += int((rec.header.Length - 6) / 4)
+                        offset[REC_TYPE_MOTION_GYRO] += int((rec.header.Length - 6-1) / 4)
+                        offset[REC_TYPE_MOTION_ACCL] += int((rec.header.Length - 6-1) / 4)
 
                     elif rec.header.Type == REC_TYPE_MOTION_ACCL and REC_TYPE_MOTION_ACCL not in exclude:
                         # save metadata
@@ -130,11 +130,11 @@ class Parser(object):
 
 
                         data[REC_TYPE_MOTION_ACCL][offset[REC_TYPE_MOTION_ACCL]:offset[REC_TYPE_MOTION_ACCL] +
-                                                                                int((rec.header.Length - 6)/2)] = \
-                            np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)],
+                                                                                int((rec.header.Length - 6-1)/2)] = \
+                            np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6-1)],
                                           dtype='>i2')
 
-                        offset[REC_TYPE_MOTION_ACCL] += int((rec.header.Length - 6) / 2)
+                        offset[REC_TYPE_MOTION_ACCL] += int((rec.header.Length - 6-1) / 2)
 
                     elif rec.header.Type == REC_TYPE_MOTION_GYRO and REC_TYPE_MOTION_GYRO not in exclude:
                         # save metadata
@@ -147,11 +147,11 @@ class Parser(object):
                             flag_gyro_metadata = True
 
                         data[REC_TYPE_MOTION_GYRO][offset[REC_TYPE_MOTION_GYRO]:offset[REC_TYPE_MOTION_GYRO] +
-                        int((rec.header.Length - 6)/2)] = \
-                            np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)],
+                        int((rec.header.Length - 6-1)/2)] = \
+                            np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6-1)],
                                           dtype='>i2')
 
-                        offset[REC_TYPE_MOTION_GYRO] += int((rec.header.Length - 6) / 2)
+                        offset[REC_TYPE_MOTION_GYRO] += int((rec.header.Length - 6-1) / 2)
 
             # trim zeros from tail
             if flag_adc_metadata:

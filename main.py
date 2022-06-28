@@ -23,8 +23,8 @@ client = boto3.client('s3', config=clientconfig)
 
 
 input = urlparse(os.environ.get('INPUT',
-                                 's3://x-cognito/xf2parser/dau-13-6/'))
-output = urlparse(os.environ.get('OUTPUT', 's3://x-cognito/xf2parser/dau-13-6/dau-13-6.edf'))
+                                 's3://x-cognito/data for 1.3 HW and FW testing/HW_1.2_FW_1.3/20220621_7E8C_HW_1.2_FW_14.6.0.25_sine_31hz_1mv/RECORDS/'))
+output = urlparse(os.environ.get('OUTPUT', 'c:/text/test.edf'))
 
 local_work_directory = 'data'
 if not os.path.isdir(local_work_directory):

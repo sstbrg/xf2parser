@@ -112,7 +112,7 @@ class Parser(object):
                             flag_gyro_metadata = True
                             flag_accl_metadata = True
 
-                        data_from_record = np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)], dtype='>u2')
+                        data_from_record = np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)], dtype='>i2')
 
                         data[REC_TYPE_MOTION_GYRO][offset[REC_TYPE_MOTION_GYRO]:offset[REC_TYPE_MOTION_GYRO]
                                                                                 +int((rec.header.Length - 6) / 4)] = \
@@ -154,7 +154,7 @@ class Parser(object):
                         data[REC_TYPE_MOTION_GYRO][offset[REC_TYPE_MOTION_GYRO]:offset[REC_TYPE_MOTION_GYRO] +
                         int((rec.header.Length - 6)/2)] = \
                             np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)],
-                                          dtype='>u2')
+                                          dtype='>i2')
 
                         offset[REC_TYPE_MOTION_GYRO] += int((rec.header.Length - 6) / 2)
 
@@ -172,10 +172,10 @@ class Parser(object):
                 data[REC_TYPE_ADC] = data[REC_TYPE_ADC] - np.float_power(2, ADC_BITS - 1) #ADC_RESOLUTION * (data[REC_TYPE_ADC] - np.float_power(2, ADC_BITS - 1))
                 data[REC_TYPE_ADC] = data[REC_TYPE_ADC].astype(np.int16)
             if flag_gyro_metadata:
-                data[REC_TYPE_MOTION_GYRO] = data[REC_TYPE_MOTION_GYRO] - np.float_power(2, IMU_BITS - 1)
+                # data[REC_TYPE_MOTION_GYRO] = data[REC_TYPE_MOTION_GYRO] - np.float_power(2, IMU_BITS - 1)
                 data[REC_TYPE_MOTION_GYRO] = data[REC_TYPE_MOTION_GYRO].astype(np.int16)
             if flag_accl_metadata:
-                data[REC_TYPE_MOTION_ACCL] = data[REC_TYPE_MOTION_ACCL] - np.float_power(2, IMU_BITS - 1)
+                # data[REC_TYPE_MOTION_ACCL] = data[REC_TYPE_MOTION_ACCL] - np.float_power(2, IMU_BITS - 1)
                 data[REC_TYPE_MOTION_ACCL] = data[REC_TYPE_MOTION_ACCL].astype(np.int16)
 
             # remove unrelevant data

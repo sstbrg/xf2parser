@@ -2,7 +2,8 @@ import numpy as np
 
 from XF2Parser import *
 from EDFExport import *
-local_work_directory = r'C:\Users\Stas\OneDrive - xtrodes\Data\hw 1.2 fw 1.3\HW_1.2_FW_1.3\20220621_02C3_HW_1.2_FW_14.6.0.25_sine_31hz_1mv\RECORDS'
+# local_work_directory = r'C:\Users\Stas\OneDrive - xtrodes\Data\hw 1.2 fw 1.3\HW_1.2_FW_1.3\20220621_02C3_HW_1.2_FW_14.6.0.25_sine_31hz_1mv\RECORDS'
+local_work_directory = r'/home/gonen/PycharmProjects/xf2parser/data'
 #local_output_prefix = r'result\DAU-13-6 old-hardware-new-FW-gyro-acc-fix-20220613_sine_3hz_1v_2'
 
 # parsing

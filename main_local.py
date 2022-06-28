@@ -8,7 +8,7 @@ local_work_directory = r'/home/gonen/PycharmProjects/xf2parser/data'
 
 # parsing
 parser = Parser(work_directory=local_work_directory)
-data_gen = parser.process_files(exclude=[])
+data_gen = parser.process_files(exclude=())
 
 # edf creation part
 edfer = EDFProcessor(file_path=r'result\20220621_02C3_HW_1.2_FW_14.6.0.25_sine_31hz_1mv.edf')

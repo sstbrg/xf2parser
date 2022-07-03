@@ -49,15 +49,7 @@ class Parser(object):
             print('INFO: there are %d records' % num_of_records)
 
             for c, rec in enumerate(f.records):
-                # notify about errors
-                if ERROR_WRONG_CRC in rec.errors:
-                    print('ERROR: Skipping record data. Record %d has a wrong CRC' % c)
-                if ERROR_WRONG_EOR in rec.errors:
-                    print('WARNING: Skipping record data. Start of record (SOR) in record %d does not point to an actual record. ' 
-                          'This is most likely becuase the SOR byte is part of the data.' % c)
-                if ERROR_WRONG_SOR_IN_HEADER in rec.errors:
-                    print('ERROR: Skipping record data. Wrong start of record (SOR) byte found in record header')
-                if ERROR_WRONG_EOR not in rec.errors:
+                if ERROR_WRONG_EOR not in rec.errors and ERROR_HEADER_POINTS_BEYOND_EOF not in rec.errors:
                     data_offset = int(rec.offset + rec.HeaderSize)
                     if rec.header.Type == REC_TYPE_ADC and REC_TYPE_ADC not in exclude:
                         # save metadata

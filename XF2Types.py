@@ -12,8 +12,9 @@ START_OF_FILE = b'\x0D\x00'
 START_OF_RECORD = 13
 END_OF_RECORD = 10
 ERROR_WRONG_SOR_IN_HEADER = 'ERROR: Wrong SOR in header'
+ERROR_HEADER_POINTS_BEYOND_EOF = 'ERROR: Header points beyond the end of file'
 ERROR_WRONG_EOR = 'ERROR: Wrong EOR based on record structure'
-ERROR_WRONG_CRC = 'ERROR: Calculated CEC does not match recorded CRC'
+ERROR_WRONG_CRC = 'ERROR: Calculated CRC does not match recorded CRC'
 ERROR_CHANNEL_MAP_CHANGED = 'ERROR: Channel map has changed within the file'
 
 CRC_POLYNOMIAL = 0xAF01 #int.from_bytes(b'\xAF\x01', byteorder='little')
@@ -53,10 +54,12 @@ class RecordStruct(Struct):
             'Sor' / Int8ul,
             'Type' / Int8ul,
             'UnixTime' / Int32ul,
+            'UnixMs' / Int16ul,
             'Length' / Int16ul,
             'PacketIndex' / Int16ul,
             'ChannelMap' / Int16ul,
-            'SampleRate' / Int16ul))
+            'SampleRate' / Int16ul,
+            'DownSamplingFactor' / Int8ul))
     #Data = Struct('Data' / Array(header['Length'], Int8ul))
     EOR = attr.ib(default=Struct(
             'CRC' / Int16ul,

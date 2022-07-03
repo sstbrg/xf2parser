@@ -30,8 +30,10 @@ class File(object):
 
         for x in sor_offsets:
             record = Record(type=x[1], offset=x[0])
-            record.parse(self.filecontents)
-            self.records.append(record)
+            if record.parse(self.filecontents):
+                self.records.append(record)
+            else:
+                continue
 
         self.records = sorted(self.records, key=lambda x: x.header.PacketIndex, reverse=False)
 

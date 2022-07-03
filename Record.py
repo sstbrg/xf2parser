@@ -31,15 +31,40 @@ class Record(object):
     eor = attr.field(default=None)
 
     def parse(self, content):
+        self.errors = []
         self.HeaderSize = sum([sub.length for sub in self._HeaderStruct.subcons])
         self.EORSize = sum([sub.length for sub in self._EORStruct.subcons])
         self.header = self._parse_header(content)
         self.eor = self._parse_eor(content)
-        self.errors = self._check_record(content)
+        #print('done parsing record at offset %d' % self.offset)
+        if ERROR_WRONG_CRC in self.errors or \
+            ERROR_WRONG_EOR in self.errors or \
+            ERROR_HEADER_POINTS_BEYOND_EOF in self.errors or \
+            ERROR_WRONG_SOR_IN_HEADER in self.errors:
+                return False
+        else:
+            return True
 
     def _parse_header(self, content):
-        #print('Offset=%d' % self.offset)
+        #print('Parsing record at offset %d' % self.offset)
         parsed = self._HeaderStruct.parse(content[self.offset:self.offset+self.HeaderSize])
+
+        if parsed.Sor != START_OF_RECORD:
+            self.errors.append(ERROR_WRONG_SOR_IN_HEADER)
+            print(ERROR_WRONG_SOR_IN_HEADER)
+
+
+        if self.offset + self.HeaderSize + parsed.Length - 6 - 1 + self.EORSize > len(content):
+            self.errors.append(ERROR_HEADER_POINTS_BEYOND_EOF)
+            print(ERROR_HEADER_POINTS_BEYOND_EOF)
+            return False
+
+        if content[
+            self.offset + self.HeaderSize + parsed.Length - 6 - 1 + self.EORSize - 1] != END_OF_RECORD:
+            self.errors.append(ERROR_WRONG_EOR)
+            print(ERROR_WRONG_EOR)
+
+
         if parsed.Type == REC_TYPE_ADC:
             parsed.ChannelMap = [num if val == '1' else None for num, val in
                                enumerate(list('{0:016b}'.format(parsed.ChannelMap)))]
@@ -64,30 +89,21 @@ class Record(object):
     #    return data.parse(self._filecontents[self.offset+self._HeaderSize:self.offset+self._HeaderSize+self.header.Length])
 
 
-    def _check_record(self, content):
-        errors = list()
-        if self.header.Sor != START_OF_RECORD:
-            errors.append(ERROR_WRONG_SOR_IN_HEADER)
-
-        #if self._filecontents[0][self.offset + self.HeaderSize + self.header.Length + self.EORSize - 1] != END_OF_RECORD:
-        if content[
-            self.offset + self.HeaderSize + self.header.Length - 6 + self.EORSize - 1] != END_OF_RECORD:
-            errors.append(ERROR_WRONG_EOR)
-
-        return errors
-
-
     def _parse_eor(self, content):
         #eor = self._EORStruct.parse(self._filecontents[0][
         #                                 self.offset + self.HeaderSize + self.header.Length:
         #                                 self.offset + self.HeaderSize + self.header.Length + self.EORSize])
+        if ERROR_HEADER_POINTS_BEYOND_EOF not in self.errors:
+            eor = self._EORStruct.parse(content[
+                                        self.offset + self.HeaderSize + self.header.Length - 6-1:
+                                        self.offset + self.HeaderSize + self.header.Length - 6-1 + self.EORSize])
 
-        eor = self._EORStruct.parse(content[
-                                    self.offset + self.HeaderSize + self.header.Length - 6:
-                                    self.offset + self.HeaderSize + self.header.Length - 6 + self.EORSize])
 
-        if eor.CRC != calc_crc16(content[self.offset+1:
-            self.offset+1+self.HeaderSize+self.header.Length-6-1]):
-            self.errors.append(ERROR_WRONG_CRC)
+            if eor.CRC != calc_crc16(content[self.offset+1:
+                self.offset+1+self.HeaderSize+self.header.Length-6-1-1]):
+                self.errors.append(ERROR_WRONG_CRC)
+                print(ERROR_WRONG_CRC)
 
-        return eor
+            return eor
+        else:
+            return False

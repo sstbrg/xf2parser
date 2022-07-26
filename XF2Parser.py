@@ -10,7 +10,7 @@ class Parser(object):
     data = attr.field(default={REC_TYPE_ADC: None,
                                REC_TYPE_MOTION_GYRO: None,
                                REC_TYPE_MOTION_ACCL: None})
-    metadata = attr.field(default=list())
+    metadata = attr.field(factory=list)
 
     def process_files(self, exclude=()):
         file_list = natsorted([x for x in glob(os.path.join(self.work_directory, '*'+FILE_FORMAT))])

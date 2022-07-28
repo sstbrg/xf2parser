@@ -60,7 +60,7 @@ class Record(object):
             return False
 
         if content[
-            self.offset + self.HeaderSize + parsed.Length - 6 - 1 + self.EORSize - 1] != END_OF_RECORD:
+            self.offset + self.HeaderSize + parsed.Length - 6 - 1 + self.EORSize] != END_OF_RECORD:
             self.errors.append(ERROR_WRONG_EOR)
             print(ERROR_WRONG_EOR)
 
@@ -72,10 +72,13 @@ class Record(object):
         elif parsed.Type == REC_TYPE_MOTION:
             if parsed.ChannelMap == REC_TYPE_MOTION_GYRO:
                 parsed.Type = REC_TYPE_MOTION_GYRO
+                parsed.ChannelMap = [16, 17, 18]
             elif parsed.ChannelMap == REC_TYPE_MOTION_ACCL:
                 parsed.Type = REC_TYPE_MOTION_ACCL
+                parsed.ChannelMap = [19, 20, 21]
             elif parsed.ChannelMap == REC_TYPE_MOTION_GYRO_AND_ACCL:
                 parsed.Type = REC_TYPE_MOTION_GYRO_AND_ACCL
+                parsed.ChannelMap = [16, 17, 18, 19, 20, 21]
 
         #print('Length=%d, Sor=%d' % (parsed.Length, parsed.Sor))
         return parsed
@@ -95,12 +98,11 @@ class Record(object):
         #                                 self.offset + self.HeaderSize + self.header.Length + self.EORSize])
         if ERROR_HEADER_POINTS_BEYOND_EOF not in self.errors:
             eor = self._EORStruct.parse(content[
-                                        self.offset + self.HeaderSize + self.header.Length - 6-1:
-                                        self.offset + self.HeaderSize + self.header.Length - 6-1 + self.EORSize])
+                                        self.offset + self.HeaderSize + self.header.Length - 6:
+                                        self.offset + self.HeaderSize + self.header.Length - 6 + self.EORSize])
 
 
-            if eor.CRC != calc_crc16(content[self.offset+1:
-                self.offset+1+self.HeaderSize+self.header.Length-6-1-1]):
+            if eor.CRC != calc_crc16(content[self.offset+1:self.offset+1+self.HeaderSize+self.header.Length-6-1]):
                 self.errors.append(ERROR_WRONG_CRC)
                 print(ERROR_WRONG_CRC)
 

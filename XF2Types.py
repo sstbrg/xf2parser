@@ -11,11 +11,11 @@ REC_TYPE_MOTION_GYRO_AND_ACCL = 3
 START_OF_FILE = b'\x0D\x00'
 START_OF_RECORD = 13
 END_OF_RECORD = 10
-ERROR_WRONG_SOR_IN_HEADER = 'ERROR: Wrong SOR in header'
-ERROR_HEADER_POINTS_BEYOND_EOF = 'ERROR: Header points beyond the end of file'
-ERROR_WRONG_EOR = 'ERROR: Wrong EOR based on record structure'
-ERROR_WRONG_CRC = 'ERROR: Calculated CRC does not match recorded CRC'
-ERROR_CHANNEL_MAP_CHANGED = 'ERROR: Channel map has changed within the file'
+ERROR_WRONG_SOR_IN_HEADER = 'ERROR: RECORD: Wrong SOR in header'
+ERROR_HEADER_POINTS_BEYOND_EOF = 'ERROR: RECORD: Header points beyond the end of file'
+ERROR_WRONG_EOR = 'ERROR: RECORD: Wrong EOR based on record structure'
+ERROR_WRONG_CRC = 'ERROR: RECORD: Calculated CRC does not match recorded CRC'
+ERROR_CHANNEL_MAP_CHANGED = 'ERROR: RECORD: Channel map has changed within the file'
 
 CRC_POLYNOMIAL = 0xAF01 #int.from_bytes(b'\xAF\x01', byteorder='little')
 CRC_STARTING_VALUE = 0x0000

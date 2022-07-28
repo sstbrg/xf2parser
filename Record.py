@@ -72,10 +72,13 @@ class Record(object):
         elif parsed.Type == REC_TYPE_MOTION:
             if parsed.ChannelMap == REC_TYPE_MOTION_GYRO:
                 parsed.Type = REC_TYPE_MOTION_GYRO
+                parsed.ChannelMap = [16, 17, 18]
             elif parsed.ChannelMap == REC_TYPE_MOTION_ACCL:
                 parsed.Type = REC_TYPE_MOTION_ACCL
+                parsed.ChannelMap = [19, 20, 21]
             elif parsed.ChannelMap == REC_TYPE_MOTION_GYRO_AND_ACCL:
                 parsed.Type = REC_TYPE_MOTION_GYRO_AND_ACCL
+                parsed.ChannelMap = [16, 17, 18, 19, 20, 21]
 
         #print('Length=%d, Sor=%d' % (parsed.Length, parsed.Sor))
         return parsed

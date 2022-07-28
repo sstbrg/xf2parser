@@ -50,7 +50,7 @@ data_gen = parser.process_files(exclude=[])
 
 # edf creation part
 edfer = EDFProcessor(file_path=local_output_path)
-edfer.save_to_edf(data_generator=data_gen, files_metadata=parser.metadata)
+edfer.save_to_edf(data_generator=data_gen)
 
 output_prefix = output.path[1:]
 print('INFO: uploading %s' % output_prefix)

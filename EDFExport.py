@@ -2,6 +2,7 @@ import numpy as np
 import pyedflib
 from XF2Types import *
 from pathlib import Path
+import math
 
 @attr.define
 class EDFProcessor(object):
@@ -12,50 +13,88 @@ class EDFProcessor(object):
     _type_flags = attr.field(default={REC_TYPE_ADC: False, REC_TYPE_MOTION_GYRO: False, REC_TYPE_MOTION_ACCL: False})
     _left_to_read = attr.field(default={REC_TYPE_ADC: 0, REC_TYPE_MOTION_GYRO: 0, REC_TYPE_MOTION_ACCL: 0})
     _number_of_samples_in_second = attr.field(default={REC_TYPE_ADC: 0, REC_TYPE_MOTION_GYRO: 0, REC_TYPE_MOTION_ACCL: 0})
-    _channel_maps = attr.field(default={REC_TYPE_ADC: [], REC_TYPE_MOTION_GYRO: [], REC_TYPE_MOTION_ACCL: []})
+    _number_of_channels = attr.field(default={REC_TYPE_ADC: 0, REC_TYPE_MOTION_GYRO: 0, REC_TYPE_MOTION_ACCL: 0})
+    #_channel_maps = attr.field(default={REC_TYPE_ADC: [], REC_TYPE_MOTION_GYRO: [], REC_TYPE_MOTION_ACCL: []})
     _read_offset = attr.field(default={REC_TYPE_ADC: 0, REC_TYPE_MOTION_GYRO: 0, REC_TYPE_MOTION_ACCL: 0})
     _types = attr.field(default=[])
     
-    def create_signal_headers_from_metadata(self, files_metadata):
+    def create_signal_headers_from_metadata(self, records, detected_signal_types):
         channel_map = np.zeros(
             shape=(NUMBER_OF_HW_ADC_CHANNELS + NUMBER_OF_HW_GYRO_CHANNELS + NUMBER_OF_HW_ACCL_CHANNELS,))
         channel_map[:] = np.nan
-        sampling_rates = list(channel_map)
-        label_prefixes = list(channel_map)
-        physical_maxs = list(channel_map)
-        physical_mins = list(channel_map)
-        digital_maxs = list(channel_map)
-        digital_mins = list(channel_map)
-        dimensions = list(channel_map)
-        for metadata in files_metadata:
-            channel_map[metadata['ChannelMap']] = metadata['ChannelMap']
-            if metadata['Type'] == REC_TYPE_ADC:
-                for i in metadata['ChannelMap']:
-                    sampling_rates[i] = metadata['SamplingRate']
-                    label_prefixes[i] = 'ADC-'
-                    dimensions[i] = 'uV'
-                    physical_maxs[i] = EL_PHYS_MAX
-                    physical_mins[i] = EL_PHYS_MIN
-                    digital_maxs[i] = EL_DIG_MAX
-                    digital_mins[i] = EL_DIG_MIN
-            elif metadata['Type'] == REC_TYPE_MOTION_ACCL:
-                for i in metadata['ChannelMap']:
-                    sampling_rates[i] = metadata['SamplingRate']
-                    label_prefixes[i] = 'ACCL-'
-                    dimensions[i] = 'g'
-                    physical_maxs[i] = ACCL_PHYS_MAX
-                    physical_mins[i] = ACCL_PHYS_MIN
-                    digital_maxs[i] = ACCL_DIG_MAX
-                    digital_mins[i] = ACCL_DIG_MIN
-            elif metadata['Type'] == REC_TYPE_MOTION_GYRO:
-                for i in metadata['ChannelMap']:
-                    sampling_rates[i] = metadata['SamplingRate']
-                    label_prefixes[i] = 'GYRO-'
-                    dimensions[i] = 'dps'
-                    physical_maxs[i] = GYRO_PHYS_MAX
-                    physical_mins[i] = GYRO_PHYS_MIN
-                    digital_maxs[i] = GYRO_DIG_MAX
-                    digital_mins[i] = GYRO_DIG_MIN
+        sampling_rates = channel_map.copy()
+        label_prefixes = channel_map.copy().astype(object)
+        physical_maxs = channel_map.copy()
+        physical_mins = channel_map.copy()
+        digital_maxs = channel_map.copy()
+        digital_mins = channel_map.copy()
+        dimensions = channel_map.copy().astype(object)
+
+        (flag_adc, flag_gyro, flag_accl) = (detected_signal_types[REC_TYPE_ADC],
+                                            detected_signal_types[REC_TYPE_MOTION_GYRO],
+                                            detected_signal_types[REC_TYPE_MOTION_ACCL])
+
+        for rec in records:
+            if flag_adc and rec.header.Type == REC_TYPE_ADC:
+                #self._channel_maps[REC_TYPE_ADC] = rec.header.ChannelMap
+                channel_map[rec.header.ChannelMap] = rec.header.ChannelMap
+                sampling_rates[rec.header.ChannelMap] = rec.header.SampleRate
+                label_prefixes[rec.header.ChannelMap] = 'ADC-'
+                dimensions[rec.header.ChannelMap] = 'uV'
+                physical_maxs[rec.header.ChannelMap] = EL_PHYS_MAX
+                physical_mins[rec.header.ChannelMap] = EL_PHYS_MIN
+                digital_maxs[rec.header.ChannelMap] = EL_DIG_MAX
+                digital_mins[rec.header.ChannelMap] = EL_DIG_MIN
+                flag_adc = False
+
+            if flag_accl and rec.header.Type == REC_TYPE_MOTION_ACCL:
+                #self._channel_maps[REC_TYPE_MOTION_ACCL] = rec.header.ChannelMap
+                channel_map[rec.header.ChannelMap] = rec.header.ChannelMap
+                sampling_rates[rec.header.ChannelMap] = rec.header.SampleRate
+                label_prefixes[rec.header.ChannelMap] = 'ACCL-'
+                dimensions[rec.header.ChannelMap] = 'g'
+                physical_maxs[rec.header.ChannelMap] = ACCL_PHYS_MAX
+                physical_mins[rec.header.ChannelMap] = ACCL_PHYS_MIN
+                digital_maxs[rec.header.ChannelMap] = ACCL_DIG_MAX
+                digital_mins[rec.header.ChannelMap] = ACCL_DIG_MIN
+                flag_accl = False
+
+            if flag_gyro and rec.header.Type == REC_TYPE_MOTION_GYRO:
+                #self._channel_maps[REC_TYPE_MOTION_GYRO] = rec.header.ChannelMap
+                channel_map[rec.header.ChannelMap] = rec.header.ChannelMap
+                sampling_rates[rec.header.ChannelMap] = rec.header.SampleRate
+                label_prefixes[rec.header.ChannelMap] = 'GYRO-'
+                dimensions[rec.header.ChannelMap] = 'dps'
+                physical_maxs[rec.header.ChannelMap] = GYRO_PHYS_MAX
+                physical_mins[rec.header.ChannelMap] = GYRO_PHYS_MIN
+                digital_maxs[rec.header.ChannelMap] = GYRO_DIG_MAX
+                digital_mins[rec.header.ChannelMap] = GYRO_DIG_MIN
+                flag_gyro = False
+
+            if flag_gyro and flag_accl and rec.header.Type == REC_TYPE_MOTION_GYRO_AND_ACCL:
+                #self._channel_maps[REC_TYPE_MOTION_GYRO_AND_ACCL] = rec.header.ChannelMap
+                channel_map[rec.header.ChannelMap] = rec.header.ChannelMap
+                sampling_rates[rec.header.ChannelMap] = rec.header.SampleRate
+                label_prefixes[rec.header.ChannelMap[:3]] = 'GYRO-'
+                label_prefixes[rec.header.ChannelMap[3:]] = 'ACCL-'
+                dimensions[rec.header.ChannelMap[:3]] = 'dps'
+                dimensions[rec.header.ChannelMap[3:]] = 'g'
+                physical_maxs[rec.header.ChannelMap[:3]] = GYRO_PHYS_MAX
+                physical_mins[rec.header.ChannelMap[:3]] = GYRO_PHYS_MIN
+                digital_maxs[rec.header.ChannelMap[:3]] = GYRO_DIG_MAX
+                digital_mins[rec.header.ChannelMap[:3]] = GYRO_DIG_MIN
+                physical_maxs[rec.header.ChannelMap[3:]] = ACCL_PHYS_MAX
+                physical_mins[rec.header.ChannelMap[3:]] = ACCL_PHYS_MIN
+                digital_maxs[rec.header.ChannelMap[3:]] = ACCL_DIG_MAX
+                digital_mins[rec.header.ChannelMap[3:]] = ACCL_DIG_MIN
+                flag_gyro = False
+                flag_accl = False
+
+            if not (flag_adc or flag_gyro or flag_accl):
+                break
+
+
+
         return self.create_signal_headers(channel_map=channel_map,
                                                          label_prefixes=label_prefixes,
                                                          dimensions=dimensions,
@@ -83,14 +122,11 @@ class EDFProcessor(object):
                            'physical_max': physical_maxs[cc],
                            'physical_min': physical_mins[cc],
                            'digital_max': diginal_maxs[cc],
-                           'digital_min': digital_mins[cc]} for cc, ii in enumerate(channel_map) if ii>=0]
+                           'digital_min': digital_mins[cc]} for cc, ii in enumerate(channel_map) if not math.isnan(ii)]
         return signal_headers
 
-    def _init_buffer(self, metadata, type):
-        self._buffer[type] = np.zeros(shape=(200000000,), dtype=np.int16)
-        self._type_flags[type] = True
-        self._channel_maps[type] = metadata['ChannelMap']
-        self._number_of_samples_in_second[type] = metadata['SamplingRate'] * len(metadata['ChannelMap'])
+    #def _init_buffer(self, metadata, type):
+
 
     def _write_buffer(self, databatch):
         for type in self._types:
@@ -105,24 +141,47 @@ class EDFProcessor(object):
             self._left_to_read[type] += databatch[type].shape[0]
             #print('INFO: done writing to buffer')
 
-    def save_to_edf(self, data_generator, files_metadata):
+    def save_to_edf(self, data_generator, write_record_created_annotations):
         flag_first_batch = True
-        onset_in_seconds = 0
-        for databatch, filepath in data_generator:
+        #onset_in_seconds = 0
+        for databatch, filepath, records, detected_data_types in data_generator:
             if flag_first_batch:
                 # prep signal headers and edf writer
-                signal_headers = self.create_signal_headers_from_metadata(files_metadata)
+                signal_headers = self.create_signal_headers_from_metadata(records, detected_data_types)
                 self.edfwriter = pyedflib.EdfWriter(file_name=self.file_path, n_channels=len(signal_headers))
                 self.edfwriter.setSignalHeaders(signal_headers)
                 
                 # prepare buffer
-                for x in files_metadata:
-                    self._init_buffer(x, x['Type'])
-                    self._types.append(x['Type'])
+                for x in detected_data_types.keys():
+                    self._buffer[x] = np.zeros(shape=(200000000,), dtype=np.int16)
+
+                # set active types
+                for x in detected_data_types.keys():
+                    self._type_flags[x] = True
+                    self._types.append(x)
+
+                # calculate the number of samples per second for all channels and the number of channels per signal type
+                for x in detected_data_types.keys():
+                    if x == REC_TYPE_ADC:
+                        idxs = [index for (index, d) in enumerate(signal_headers) if 'ADC' in d['label']]
+                    elif x == REC_TYPE_MOTION_GYRO:
+                        idxs = [index for (index, d) in enumerate(signal_headers) if 'GYRO' in d['label']]
+                    elif x == REC_TYPE_MOTION_ACCL:
+                        idxs = [index for (index, d) in enumerate(signal_headers) if 'ACCL' in d['label']]
+                    self._number_of_channels[x] = len(idxs)
+                    self._number_of_samples_in_second[x] = int(signal_headers[idxs[0]]['sample_frequency'] * len(idxs))
+
+                ## first record appears at the following time (in seconds)
+                t0 = records[0].header.UnixTime + records[0].header.UnixMs/1000
+
                 flag_first_batch = False
 
-            # write file created annotation
-            self.edfwriter.writeAnnotation(onset_in_seconds=onset_in_seconds, duration_in_seconds=1, description='file created %s' % Path(filepath).name)
+            # write record annotation
+            if write_record_created_annotations:
+                print('INFO: EDF: writing record creation annotations...')
+                for rec in records:
+                    onset_in_seconds = rec.header.UnixTime + rec.header.UnixMs/1000 - t0
+                    self.edfwriter.writeAnnotation(onset_in_seconds=onset_in_seconds, duration_in_seconds=0.001, description='Record PacketIndex %d in file %s' % (rec.header.PacketIndex, Path(filepath).name))
 
             # populate buffers with data from databatch
             self._write_buffer(databatch)
@@ -131,13 +190,14 @@ class EDFProcessor(object):
             # most likely gyro and accl samples will be written first
             data_to_write = {REC_TYPE_ADC: 0, REC_TYPE_MOTION_GYRO: 0, REC_TYPE_MOTION_ACCL: 0}
             #min_type = min(self._number_of_samples_in_second, key=self._number_of_samples_in_second.get)
+            print('INFO: EDF: writing buffer contents to EDF until all the buffers do not have enough samples to fill one second')
             while all([self._left_to_read[type] >= self._number_of_samples_in_second[type] for type in self._types]):
                 #self._write_to_edf_from_buffer_multimodal(databatch)
                 for type in self._types:
                     data_to_write[type] = self._buffer[type][self._read_offset[type]:self._read_offset[type]+self._number_of_samples_in_second[type]]
                     data_to_write[type] = np.reshape(np.transpose(np.reshape(data_to_write[type],
                                                                              newshape=(
-                                                                             -1, len(self._channel_maps[type])),
+                                                                             -1, self._number_of_channels[type]),
                                                                              order='C')),
                                                      newshape=(self._number_of_samples_in_second[type],), order='C')
                     self._left_to_read[type] -= self._number_of_samples_in_second[type]
@@ -167,9 +227,9 @@ class EDFProcessor(object):
             # we write to the head
             # and read from the tail towards the head
 
-            for rec in files_metadata:
-                if rec['Type'] == REC_TYPE_ADC:
-                    onset_in_seconds += databatch[REC_TYPE_ADC].shape[0]/rec['SamplingRate']/len(rec['ChannelMap'])
+            #for rec in files_metadata:
+             #   if rec['Type'] == REC_TYPE_ADC:
+             #       onset_in_seconds += databatch[REC_TYPE_ADC].shape[0]/rec['SamplingRate']/len(rec['ChannelMap'])
 
             # relocate the tail to 0, keep leftovers and pad
             # anything over the head with 0's
@@ -193,4 +253,4 @@ class EDFProcessor(object):
 
 
         self.edfwriter.close()
-        print('INFO: finished writing EDF file %s' % self.file_path)
+        print('INFO: EDF: finished writing EDF file %s' % self.file_path)

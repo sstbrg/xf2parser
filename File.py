@@ -21,6 +21,8 @@ class File(object):
         with open(self.filepath, 'rb') as f:
             return f.read()
 
+
+
     def get_records(self):
         #filecontentsstr = self.filecontents.hex()
         self.records = list()
@@ -36,6 +38,8 @@ class File(object):
                 continue
 
         self.records = sorted(self.records, key=lambda x: x.header.PacketIndex, reverse=False)
+
+
 
         # rearrange the records into a table and sort according to PacketIndex
         # RECORDS_TABLE_COLUMNS=[Time PacketIndex Type Offset Length] (see in XF2Types.py)

@@ -30,8 +30,16 @@ class Parser(object):
                         prev_time = rec.header.UnixTime + rec.header.UnixMs / 1000
         return True
 
+    def findfiles(self, which, where='.'):
+        '''Returns list of filenames from `where` path matched by 'which'
+           shell pattern. Matching is case-insensitive.'''
+
+        rule = re.compile(fnmatch.translate(which), re.IGNORECASE)
+        return [os.path.join(where, name) for name in os.listdir(where) if rule.match(name)]
+
     def process_files(self, exclude=()):
-        file_list = natsorted([x for x in glob(os.path.join(self.work_directory, '*'+FILE_FORMAT))])
+        #file_list = natsorted([x for x in glob(os.path.join(self.work_directory, '*'+FILE_FORMAT))])
+        file_list = sorted(self.findfiles('*'+FILE_FORMAT, self.work_directory))
         # every file usually has 124560 samples of adc data and 94545 samples of gyro data
 
         # infer final array size, usually there are 1038 adc records of 3840 bytes per file and 369 motion records of size 510 bytes

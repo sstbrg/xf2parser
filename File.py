@@ -1,4 +1,6 @@
 from Record import *
+import fnmatch
+import os
 import re
 
 @attr.define
@@ -38,6 +40,7 @@ class File(object):
                 continue
 
         self.records = sorted(self.records, key=lambda x: x.header.PacketIndex, reverse=False)
+
 
 
 

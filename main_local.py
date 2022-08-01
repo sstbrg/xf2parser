@@ -13,4 +13,4 @@ data_gen = parser.process_files(exclude=())
 # edf creation part
 edfer = EDFProcessor(file_path=r'result/20220727_7f0d_0x41_502_sine_31_1_12ch_firstfile.edf')
 
-edfer.save_to_edf(data_generator=data_gen, write_record_created_annotations=True)
+edfer.save_to_edf(data_generator=data_gen, write_record_created_annotations=False)

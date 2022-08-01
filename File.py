@@ -34,4 +34,4 @@ class File(object):
             else:
                 continue
 
-        self.records = sorted(self.records, key=lambda x: x.header.PacketIndex, reverse=False)
+        self.records = sorted(self.records, key=lambda x: (x.header.UnixTime + x.header.UnixMs/1000), reverse=False)

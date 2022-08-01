@@ -90,19 +90,21 @@ class Parser(object):
                             #    flag_gyro = True
                             #    flag_accl = True
 
-                            data_from_record = np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)],
-                                                             dtype='>i2')
+                            data_from_record = np.fromstring(
+                                f.filecontents[data_offset:data_offset + (rec.header.Length - 6)],
+                                dtype='>i2')
 
-                            data[REC_TYPE_MOTION_ACCL][offset[REC_TYPE_MOTION_ACCL]:offset[REC_TYPE_MOTION_ACCL]
-                                                                                    +int((rec.header.Length - 6) / 4)] = \
-                                np.reshape(np.reshape(data_from_record, newshape=(-1, 3))[0::2], newshape=(1,-1))
+                            data[REC_TYPE_MOTION_GYRO][offset[REC_TYPE_MOTION_GYRO]:offset[REC_TYPE_MOTION_GYRO]
+                                                                                    + int(
+                                (rec.header.Length - 6) / 4)] = \
+                                np.reshape(np.reshape(data_from_record, newshape=(-1, 3))[0::2], newshape=(1, -1))
 
-                            data[REC_TYPE_MOTION_GYRO][offset[REC_TYPE_MOTION_GYRO]:offset[REC_TYPE_MOTION_GYRO] +
+                            data[REC_TYPE_MOTION_ACCL][offset[REC_TYPE_MOTION_ACCL]:offset[REC_TYPE_MOTION_ACCL] +
                                                                                     int((rec.header.Length - 6) / 4)] = \
-                                np.reshape(np.reshape(data_from_record, newshape=(-1, 3))[1::2], newshape=(1,-1))
+                                np.reshape(np.reshape(data_from_record, newshape=(-1, 3))[1::2], newshape=(1, -1))
 
-                            offset[REC_TYPE_MOTION_ACCL] += int((rec.header.Length - 6) / 4)
                             offset[REC_TYPE_MOTION_GYRO] += int((rec.header.Length - 6) / 4)
+                            offset[REC_TYPE_MOTION_ACCL] += int((rec.header.Length - 6) / 4)
 
                         elif type == REC_TYPE_MOTION_GYRO or type == REC_TYPE_MOTION_ACCL:
                             #if type == REC_TYPE_MOTION_GYRO:

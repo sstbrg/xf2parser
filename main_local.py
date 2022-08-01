@@ -8,7 +8,7 @@ local_work_directory = r'/home/stas/xtrodes/20220727_7f0d_0x41_502_sine_31_1_12c
 
 # parsing
 parser = Parser(work_directory=local_work_directory)
-data_gen = parser.process_files(exclude=())
+data_gen = parser.process_files()
 
 # edf creation part
 edfer = EDFProcessor(file_path=r'result/20220727_7f0d_0x41_502_sine_31_1_12ch_firstfile.edf')

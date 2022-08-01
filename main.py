@@ -46,7 +46,7 @@ print('INFO: done pulling files')
 
 # parsing
 parser = Parser(work_directory=local_work_directory)
-data_gen = parser.process_files(exclude=[])
+data_gen = parser.process_files()
 
 # edf creation part
 edfer = EDFProcessor(file_path=local_output_path)

@@ -34,64 +34,65 @@ class EDFProcessor(object):
                                             detected_signal_types[REC_TYPE_MOTION_GYRO],
                                             detected_signal_types[REC_TYPE_MOTION_ACCL])
 
-        for rec in records:
-            if flag_adc and rec.header.Type == REC_TYPE_ADC:
-                #self._channel_maps[REC_TYPE_ADC] = rec.header.ChannelMap
-                channel_map[rec.header.ChannelMap] = rec.header.ChannelMap
-                sampling_rates[rec.header.ChannelMap] = rec.header.SampleRate
-                label_prefixes[rec.header.ChannelMap] = 'ADC-'
-                dimensions[rec.header.ChannelMap] = 'uV'
-                physical_maxs[rec.header.ChannelMap] = EL_PHYS_MAX
-                physical_mins[rec.header.ChannelMap] = EL_PHYS_MIN
-                digital_maxs[rec.header.ChannelMap] = EL_DIG_MAX
-                digital_mins[rec.header.ChannelMap] = EL_DIG_MIN
-                flag_adc = False
+        for type in records.keys():
+            for rec in records[type]:
+                if flag_adc and rec.header.Type == REC_TYPE_ADC:
+                    #self._channel_maps[REC_TYPE_ADC] = rec.header.ChannelMap
+                    channel_map[rec.header.ChannelMap] = rec.header.ChannelMap
+                    sampling_rates[rec.header.ChannelMap] = rec.header.SampleRate
+                    label_prefixes[rec.header.ChannelMap] = 'ADC-'
+                    dimensions[rec.header.ChannelMap] = 'uV'
+                    physical_maxs[rec.header.ChannelMap] = EL_PHYS_MAX
+                    physical_mins[rec.header.ChannelMap] = EL_PHYS_MIN
+                    digital_maxs[rec.header.ChannelMap] = EL_DIG_MAX
+                    digital_mins[rec.header.ChannelMap] = EL_DIG_MIN
+                    flag_adc = False
 
-            if flag_accl and rec.header.Type == REC_TYPE_MOTION_ACCL:
-                #self._channel_maps[REC_TYPE_MOTION_ACCL] = rec.header.ChannelMap
-                channel_map[rec.header.ChannelMap] = rec.header.ChannelMap
-                sampling_rates[rec.header.ChannelMap] = rec.header.SampleRate
-                label_prefixes[rec.header.ChannelMap] = 'ACCL-'
-                dimensions[rec.header.ChannelMap] = 'g'
-                physical_maxs[rec.header.ChannelMap] = ACCL_PHYS_MAX
-                physical_mins[rec.header.ChannelMap] = ACCL_PHYS_MIN
-                digital_maxs[rec.header.ChannelMap] = ACCL_DIG_MAX
-                digital_mins[rec.header.ChannelMap] = ACCL_DIG_MIN
-                flag_accl = False
+                if flag_accl and rec.header.Type == REC_TYPE_MOTION_ACCL:
+                    #self._channel_maps[REC_TYPE_MOTION_ACCL] = rec.header.ChannelMap
+                    channel_map[rec.header.ChannelMap] = rec.header.ChannelMap
+                    sampling_rates[rec.header.ChannelMap] = rec.header.SampleRate
+                    label_prefixes[rec.header.ChannelMap] = 'ACCL-'
+                    dimensions[rec.header.ChannelMap] = 'g'
+                    physical_maxs[rec.header.ChannelMap] = ACCL_PHYS_MAX
+                    physical_mins[rec.header.ChannelMap] = ACCL_PHYS_MIN
+                    digital_maxs[rec.header.ChannelMap] = ACCL_DIG_MAX
+                    digital_mins[rec.header.ChannelMap] = ACCL_DIG_MIN
+                    flag_accl = False
 
-            if flag_gyro and rec.header.Type == REC_TYPE_MOTION_GYRO:
-                #self._channel_maps[REC_TYPE_MOTION_GYRO] = rec.header.ChannelMap
-                channel_map[rec.header.ChannelMap] = rec.header.ChannelMap
-                sampling_rates[rec.header.ChannelMap] = rec.header.SampleRate
-                label_prefixes[rec.header.ChannelMap] = 'GYRO-'
-                dimensions[rec.header.ChannelMap] = 'dps'
-                physical_maxs[rec.header.ChannelMap] = GYRO_PHYS_MAX
-                physical_mins[rec.header.ChannelMap] = GYRO_PHYS_MIN
-                digital_maxs[rec.header.ChannelMap] = GYRO_DIG_MAX
-                digital_mins[rec.header.ChannelMap] = GYRO_DIG_MIN
-                flag_gyro = False
+                if flag_gyro and rec.header.Type == REC_TYPE_MOTION_GYRO:
+                    #self._channel_maps[REC_TYPE_MOTION_GYRO] = rec.header.ChannelMap
+                    channel_map[rec.header.ChannelMap] = rec.header.ChannelMap
+                    sampling_rates[rec.header.ChannelMap] = rec.header.SampleRate
+                    label_prefixes[rec.header.ChannelMap] = 'GYRO-'
+                    dimensions[rec.header.ChannelMap] = 'dps'
+                    physical_maxs[rec.header.ChannelMap] = GYRO_PHYS_MAX
+                    physical_mins[rec.header.ChannelMap] = GYRO_PHYS_MIN
+                    digital_maxs[rec.header.ChannelMap] = GYRO_DIG_MAX
+                    digital_mins[rec.header.ChannelMap] = GYRO_DIG_MIN
+                    flag_gyro = False
 
-            if flag_gyro and flag_accl and rec.header.Type == REC_TYPE_MOTION_GYRO_AND_ACCL:
-                #self._channel_maps[REC_TYPE_MOTION_GYRO_AND_ACCL] = rec.header.ChannelMap
-                channel_map[rec.header.ChannelMap] = rec.header.ChannelMap
-                sampling_rates[rec.header.ChannelMap] = rec.header.SampleRate
-                label_prefixes[rec.header.ChannelMap[:3]] = 'GYRO-'
-                label_prefixes[rec.header.ChannelMap[3:]] = 'ACCL-'
-                dimensions[rec.header.ChannelMap[:3]] = 'dps'
-                dimensions[rec.header.ChannelMap[3:]] = 'g'
-                physical_maxs[rec.header.ChannelMap[:3]] = GYRO_PHYS_MAX
-                physical_mins[rec.header.ChannelMap[:3]] = GYRO_PHYS_MIN
-                digital_maxs[rec.header.ChannelMap[:3]] = GYRO_DIG_MAX
-                digital_mins[rec.header.ChannelMap[:3]] = GYRO_DIG_MIN
-                physical_maxs[rec.header.ChannelMap[3:]] = ACCL_PHYS_MAX
-                physical_mins[rec.header.ChannelMap[3:]] = ACCL_PHYS_MIN
-                digital_maxs[rec.header.ChannelMap[3:]] = ACCL_DIG_MAX
-                digital_mins[rec.header.ChannelMap[3:]] = ACCL_DIG_MIN
-                flag_gyro = False
-                flag_accl = False
+                if flag_gyro and flag_accl and rec.header.Type == REC_TYPE_MOTION_GYRO_AND_ACCL:
+                    #self._channel_maps[REC_TYPE_MOTION_GYRO_AND_ACCL] = rec.header.ChannelMap
+                    channel_map[rec.header.ChannelMap] = rec.header.ChannelMap
+                    sampling_rates[rec.header.ChannelMap] = rec.header.SampleRate
+                    label_prefixes[rec.header.ChannelMap[:3]] = 'GYRO-'
+                    label_prefixes[rec.header.ChannelMap[3:]] = 'ACCL-'
+                    dimensions[rec.header.ChannelMap[:3]] = 'dps'
+                    dimensions[rec.header.ChannelMap[3:]] = 'g'
+                    physical_maxs[rec.header.ChannelMap[:3]] = GYRO_PHYS_MAX
+                    physical_mins[rec.header.ChannelMap[:3]] = GYRO_PHYS_MIN
+                    digital_maxs[rec.header.ChannelMap[:3]] = GYRO_DIG_MAX
+                    digital_mins[rec.header.ChannelMap[:3]] = GYRO_DIG_MIN
+                    physical_maxs[rec.header.ChannelMap[3:]] = ACCL_PHYS_MAX
+                    physical_mins[rec.header.ChannelMap[3:]] = ACCL_PHYS_MIN
+                    digital_maxs[rec.header.ChannelMap[3:]] = ACCL_DIG_MAX
+                    digital_mins[rec.header.ChannelMap[3:]] = ACCL_DIG_MIN
+                    flag_gyro = False
+                    flag_accl = False
 
-            if not (flag_adc or flag_gyro or flag_accl):
-                break
+                if not (flag_adc or flag_gyro or flag_accl):
+                    break
 
 
 
@@ -172,16 +173,16 @@ class EDFProcessor(object):
                     self._number_of_samples_in_second[x] = int(signal_headers[idxs[0]]['sample_frequency'] * len(idxs))
 
                 ## first record appears at the following time (in seconds)
-                t0 = records[0].header.UnixTime + records[0].header.UnixMs/1000
+                #t0 = records[0].header.UnixTime + records[0].header.UnixMs/1000
 
                 flag_first_batch = False
 
             # write record annotation
-            if write_record_created_annotations:
-                print('INFO: EDF: writing record creation annotations...')
-                for rec in records:
-                    onset_in_seconds = rec.header.UnixTime + rec.header.UnixMs/1000 - t0
-                    self.edfwriter.writeAnnotation(onset_in_seconds=onset_in_seconds, duration_in_seconds=0.001, description='Record PacketIndex %d in file %s' % (rec.header.PacketIndex, Path(filepath).name))
+            #if write_record_created_annotations:
+            #    print('INFO: EDF: writing record creation annotations...')
+            #    for rec in records:
+            #        onset_in_seconds = rec.header.UnixTime + rec.header.UnixMs/1000 - t0
+            #        self.edfwriter.writeAnnotation(onset_in_seconds=onset_in_seconds, duration_in_seconds=0.001, description='Record PacketIndex %d in file %s' % (rec.header.PacketIndex, Path(filepath).name))
 
             # populate buffers with data from databatch
             self._write_buffer(databatch)

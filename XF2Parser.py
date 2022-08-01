@@ -34,7 +34,7 @@ class Parser(object):
         rule = re.compile(fnmatch.translate(which), re.IGNORECASE)
         return [os.path.join(where, name) for name in os.listdir(where) if rule.match(name)]
 
-    def process_files(self, exclude=()):
+    def process_files(self):
         file_list = sorted(self.findfiles('*'+FILE_FORMAT, self.work_directory))
         # every file usually has 124560 samples of adc data and 94545 samples of gyro data
         # infer final array size, usually there are 1038 adc records of 3840 bytes per file and 369 motion records of size 510 bytes
@@ -61,72 +61,84 @@ class Parser(object):
             print('INFO: FILE: collecting data from records of %s' % filepath)
             f = File(filepath=filepath)
             f.get_records()
-            if not self._check_if_records_are_chronological(f.records):
-                print('ERROR: FILE: records are not chronological in file %s' % filepath)
+            #if not self._check_if_records_are_chronological(f.records):
+            #    print('ERROR: FILE: records are not chronological in file %s' % filepath)
 
             # we need to fill a matrix of [samples x channels]
             # in the worst case scenario, there will be one channel active so the data matrix will be [1 x all the samples]
             # we will later trim this
 
             # we extract the data per record
-            num_of_records = len(f.records)
-            print('INFO: FILE: there are %d records' % num_of_records)
+            #num_of_records = len(f.records)
+            #print('INFO: FILE: there are %d records' % num_of_records)
+
+            detected_record_types = [x for x in f.records.keys() if len(f.records[x])]
+            for type in detected_record_types:
+                for c, rec in enumerate(f.records[type]):
+                    if ERROR_WRONG_EOR not in rec.errors and ERROR_HEADER_POINTS_BEYOND_EOF not in rec.errors:
+                        if type == REC_TYPE_ADC:
+                            #flag_adc = True
+                            data_offset = int(rec.offset + rec.HeaderSize)
+                            data[type][offset[type]:offset[type] + int((rec.header.Length - 6)/2)] = \
+                                np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)],
+                                              dtype='<u2')
+                            offset[type] += int((rec.header.Length - 6) / 2)
+
+                        # this special case is needed to split the REC_TYPE_MOTION_GYRO_AND_ACCL type into GYRO and ACCL types
+                        elif type == REC_TYPE_MOTION_GYRO_AND_ACCL:
+                            #if not flag_gyro or not flag_accl:
+                            #    flag_gyro = True
+                            #    flag_accl = True
+
+                            data_from_record = np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)],
+                                                             dtype='>i2')
+
+                            data[REC_TYPE_MOTION_ACCL][offset[REC_TYPE_MOTION_ACCL]:offset[REC_TYPE_MOTION_ACCL]
+                                                                                    +int((rec.header.Length - 6) / 4)] = \
+                                np.reshape(np.reshape(data_from_record, newshape=(-1, 3))[0::2], newshape=(1,-1))
+
+                            data[REC_TYPE_MOTION_GYRO][offset[REC_TYPE_MOTION_GYRO]:offset[REC_TYPE_MOTION_GYRO] +
+                                                                                    int((rec.header.Length - 6) / 4)] = \
+                                np.reshape(np.reshape(data_from_record, newshape=(-1, 3))[1::2], newshape=(1,-1))
+
+                            offset[REC_TYPE_MOTION_ACCL] += int((rec.header.Length - 6) / 4)
+                            offset[REC_TYPE_MOTION_GYRO] += int((rec.header.Length - 6) / 4)
+
+                        elif type == REC_TYPE_MOTION_GYRO or type == REC_TYPE_MOTION_ACCL:
+                            #if type == REC_TYPE_MOTION_GYRO:
+                            #    flag_gyro = True
+                            #elif type == REC_TYPE_MOTION_ACCL:
+                            #    flag_accl = True
+
+                            data[type][offset[type]:offset[type] +
+                                                                                    int((rec.header.Length - 6)/2)] = \
+                                np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)],
+                                              dtype='>i2')
+                            offset[type] += int((rec.header.Length - 6) / 2)
+
+                        # elif rec.header.Type == REC_TYPE_MOTION_GYRO and REC_TYPE_MOTION_GYRO not in exclude:
+                        #     if not flag_gyro:
+                        #         flag_gyro = True
+                        #
+                        #     data[REC_TYPE_MOTION_GYRO][offset[REC_TYPE_MOTION_GYRO]:offset[REC_TYPE_MOTION_GYRO] +
+                        #     int((rec.header.Length - 6)/2)] = \
+                        #         np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)],
+                        #                       dtype='>i2')
+                        #
+                        #     offset[REC_TYPE_MOTION_GYRO] += int((rec.header.Length - 6) / 2)
 
 
-            for c, rec in enumerate(f.records):
-                if ERROR_WRONG_EOR not in rec.errors and ERROR_HEADER_POINTS_BEYOND_EOF not in rec.errors:
-                    data_offset = int(rec.offset + rec.HeaderSize)
-                    if rec.header.Type == REC_TYPE_ADC and REC_TYPE_ADC not in exclude:
-                        flag_adc = True
-                        data[REC_TYPE_ADC][offset[REC_TYPE_ADC]:offset[REC_TYPE_ADC] + int((rec.header.Length - 6)/2)] = \
-                            np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)],
-                                          dtype='<u2')
-                        offset[REC_TYPE_ADC] += int((rec.header.Length - 6) / 2)
-
-                    elif rec.header.Type == REC_TYPE_MOTION_GYRO_AND_ACCL and REC_TYPE_MOTION_GYRO_AND_ACCL not in exclude:
-                        if not flag_gyro or not flag_accl:
-                            flag_gyro = True
-                            flag_accl = True
-
-                        data_from_record = np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)],
-                                                         dtype='>i2')
-
-                        data[REC_TYPE_MOTION_GYRO][offset[REC_TYPE_MOTION_GYRO]:offset[REC_TYPE_MOTION_GYRO]
-                                                                                +int((rec.header.Length - 6) / 4)] = \
-                            np.reshape(np.reshape(data_from_record, newshape=(-1, 3))[0::2], newshape=(1,-1))
-
-
-
-                        data[REC_TYPE_MOTION_ACCL][offset[REC_TYPE_MOTION_ACCL]:offset[REC_TYPE_MOTION_ACCL] +
-                                                                                int((rec.header.Length - 6) / 4)] = \
-                            np.reshape(np.reshape(data_from_record, newshape=(-1, 3))[1::2], newshape=(1,-1))
-
-                        offset[REC_TYPE_MOTION_GYRO] += int((rec.header.Length - 6) / 4)
-                        offset[REC_TYPE_MOTION_ACCL] += int((rec.header.Length - 6) / 4)
-
-                    elif rec.header.Type == REC_TYPE_MOTION_ACCL and REC_TYPE_MOTION_ACCL not in exclude:
-                        if not flag_accl:
-                            flag_accl = True
-
-
-                        data[REC_TYPE_MOTION_ACCL][offset[REC_TYPE_MOTION_ACCL]:offset[REC_TYPE_MOTION_ACCL] +
-                                                                                int((rec.header.Length - 6)/2)] = \
-                            np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)],
-                                          dtype='>i2')
-
-                        offset[REC_TYPE_MOTION_ACCL] += int((rec.header.Length - 6) / 2)
-
-                    elif rec.header.Type == REC_TYPE_MOTION_GYRO and REC_TYPE_MOTION_GYRO not in exclude:
-                        if not flag_gyro:
-                            flag_gyro = True
-
-                        data[REC_TYPE_MOTION_GYRO][offset[REC_TYPE_MOTION_GYRO]:offset[REC_TYPE_MOTION_GYRO] +
-                        int((rec.header.Length - 6)/2)] = \
-                            np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)],
-                                          dtype='>i2')
-
-                        offset[REC_TYPE_MOTION_GYRO] += int((rec.header.Length - 6) / 2)
-
+            # continuing our splitting of the REC_TYPE_MOTION_GYRO_AND_ACCL type
+            for type in detected_record_types:
+                if type == REC_TYPE_ADC:
+                    flag_adc = True
+                elif type == REC_TYPE_MOTION_GYRO_AND_ACCL:
+                    flag_accl = True
+                    flag_gyro = True
+                elif type == REC_TYPE_MOTION_GYRO:
+                    flag_gyro = True
+                elif type == REC_TYPE_MOTION_ACCL:
+                    flag_accl = True
 
             # trim zeros from tail
             if flag_adc:

@@ -181,7 +181,7 @@ class EDFProcessor(object):
                 print('INFO: EDF: writing record creation annotations...')
                 for rec in records:
                     onset_in_seconds = rec.header.UnixTime + rec.header.UnixMs/1000 - t0
-                    self.edfwriter.writeAnnotation(onset_in_seconds=onset_in_seconds, duration_in_seconds=0.001, description='Record PacketIndex %d in file %s' % (rec.header.PacketIndex, Path(filepath).name))
+                    self.edfwriter.writeAnnotation(onset_in_seconds=onset_in_seconds, duration_in_seconds=0.001, description='T %d Idx %d file %s' % (rec.header.Type, rec.header.PacketIndex, Path(filepath).name))
 
             # populate buffers with data from databatch
             self._write_buffer(databatch)

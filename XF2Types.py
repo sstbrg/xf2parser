@@ -48,6 +48,11 @@ GYRO_DIG_MAX = 2 ** 15 - 1
 GYRO_DIG_MIN = -2 ** 15
 FILE_FORMAT = '.XF2'
 
+REC_TYPE_ADC_CHANNELS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+REC_TYPE_MOTION_ACCL_CHANNELS = [16, 17, 18]
+REC_TYPE_MOTION_GYRO_CHANNELS = [19, 20, 21]
+REC_TYPE_MOTION_GYRO_AND_ACCL_CHANNELS = [16, 17, 18, 19, 20, 21]
+
 @attr.define
 class RecordStruct(Struct):
     Header = attr.ib(default=Struct(

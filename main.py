@@ -23,8 +23,8 @@ client = boto3.client('s3', config=clientconfig)
 
 # pull environmental variables
 input = urlparse(os.environ.get('INPUT',
-                                 's3://x-cognito/data for 1.3 HW and FW testing/HW_1.2_FW_1.3/20220621_02C3_HW_1.2_FW_14.6.0.25_dummy_session_2/RECORDS/'))
-output = urlparse(os.environ.get('OUTPUT', 's3://x-cognito/data for 1.3 HW and FW testing/HW_1.2_FW_1.3/20220621_02C3_HW_1.2_FW_14.6.0.25_dummy_session_2/20220621_02C3_HW_1.2_FW_14.6.0.25_dummy_session_2.edf'))
+                                 's3://xtrodes-danila/public/cognito/xtrodesclient/us-east-1:cc6a05a3-ebba-4ca3-b8c4-a0ac8e044d6a/imu_gyro_testing_2-.~1659265183533/'))
+output = urlparse(os.environ.get('OUTPUT', 's3://x-cognito/data for 1.3 HW and FW testing/HW_1.2_FW_1.3/imu_gyro_testing_2.edf'))
 
 local_work_directory = 'data'
 if not os.path.isdir(local_work_directory):

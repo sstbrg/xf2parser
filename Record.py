@@ -1,12 +1,5 @@
 from XF2Types import *
 import binascii
-import struct
-
-# def calc_crc16(bytes_in):
-#     crc16 = crcmod.mkCrcFun(CRC_POLYNOMIAL, CRC_STARTING_VALUE, CRC_BIT_REVERSAL, CRC_XOR_OUT)
-#     result = crc16(bytes_in)
-#     #print('INFO: CRC=%d' % result)
-#     return result
 
 def calc_crc16(data: bytes):
     #perform CRC16-CCITT
@@ -36,7 +29,6 @@ class Record(object):
         self.EORSize = sum([sub.length for sub in self._EORStruct.subcons])
         self.header = self._parse_header(content)
         self.eor = self._parse_eor(content)
-        #print('done parsing record at offset %d' % self.offset)
         if ERROR_WRONG_CRC in self.errors or \
             ERROR_WRONG_EOR in self.errors or \
             ERROR_HEADER_POINTS_BEYOND_EOF in self.errors or \
@@ -46,13 +38,11 @@ class Record(object):
             return True
 
     def _parse_header(self, content):
-        #print('Parsing record at offset %d' % self.offset)
         parsed = self._HeaderStruct.parse(content[self.offset:self.offset+self.HeaderSize])
 
         if parsed.Sor != START_OF_RECORD:
             self.errors.append(ERROR_WRONG_SOR_IN_HEADER)
             print(ERROR_WRONG_SOR_IN_HEADER)
-
 
         if self.offset + self.HeaderSize + parsed.Length - 6 - 1 + self.EORSize > len(content):
             self.errors.append(ERROR_HEADER_POINTS_BEYOND_EOF)
@@ -64,7 +54,6 @@ class Record(object):
             self.errors.append(ERROR_WRONG_EOR)
             print(ERROR_WRONG_EOR)
 
-
         if parsed.Type == REC_TYPE_ADC:
             parsed.ChannelMap = [num if val == '1' else None for num, val in
                                enumerate(list('{0:016b}'.format(parsed.ChannelMap)))]
@@ -72,40 +61,25 @@ class Record(object):
         elif parsed.Type == REC_TYPE_MOTION:
             if parsed.ChannelMap == REC_TYPE_MOTION_GYRO:
                 parsed.Type = REC_TYPE_MOTION_GYRO
-                parsed.ChannelMap = [16, 17, 18]
+                parsed.ChannelMap = REC_TYPE_MOTION_GYRO_CHANNELS
             elif parsed.ChannelMap == REC_TYPE_MOTION_ACCL:
                 parsed.Type = REC_TYPE_MOTION_ACCL
-                parsed.ChannelMap = [19, 20, 21]
+                parsed.ChannelMap = REC_TYPE_MOTION_ACCL_CHANNELS
             elif parsed.ChannelMap == REC_TYPE_MOTION_GYRO_AND_ACCL:
                 parsed.Type = REC_TYPE_MOTION_GYRO_AND_ACCL
-                parsed.ChannelMap = [16, 17, 18, 19, 20, 21]
-
-        #print('Length=%d, Sor=%d' % (parsed.Length, parsed.Sor))
+                parsed.ChannelMap = REC_TYPE_MOTION_GYRO_AND_ACCL_CHANNELS
         return parsed
-
-    #data = attr.field()
-
-    #@data.default
-    #def _parse_data(self):
-    #    # The data is variable so we have to define the struct each and every time we parse a record
-    #    data = Struct('Data' / Array(self.header['Length'], Int8ul))
-    #    return data.parse(self._filecontents[self.offset+self._HeaderSize:self.offset+self._HeaderSize+self.header.Length])
 
 
     def _parse_eor(self, content):
-        #eor = self._EORStruct.parse(self._filecontents[0][
-        #                                 self.offset + self.HeaderSize + self.header.Length:
-        #                                 self.offset + self.HeaderSize + self.header.Length + self.EORSize])
         if ERROR_HEADER_POINTS_BEYOND_EOF not in self.errors:
             eor = self._EORStruct.parse(content[
                                         self.offset + self.HeaderSize + self.header.Length - 6:
                                         self.offset + self.HeaderSize + self.header.Length - 6 + self.EORSize])
 
-
             if eor.CRC != calc_crc16(content[self.offset+1:self.offset+1+self.HeaderSize+self.header.Length-6-1]):
                 self.errors.append(ERROR_WRONG_CRC)
                 print(ERROR_WRONG_CRC)
-
             return eor
         else:
             return False

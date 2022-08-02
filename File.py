@@ -21,10 +21,7 @@ class File(object):
         with open(self.filepath, 'rb') as f:
             return f.read()
 
-
-
     def get_records(self):
-        #filecontentsstr = self.filecontents.hex()
         self.records = list()
         sor_adc_offsets = [(m.start(), REC_TYPE_ADC) for m in re.finditer(START_OF_SAMPLING_RECORD, self.filecontents)]
         sor_motion_offsets = [(m.start(), REC_TYPE_MOTION) for m in re.finditer(START_OF_MOTION_RECORD, self.filecontents)]
@@ -37,25 +34,4 @@ class File(object):
             else:
                 continue
 
-        self.records = sorted(self.records, key=lambda x: x.header.PacketIndex, reverse=False)
-
-
-
-        # rearrange the records into a table and sort according to PacketIndex
-        # RECORDS_TABLE_COLUMNS=[Time PacketIndex Type Offset Length] (see in XF2Types.py)
-        # self.records_table = 0*np.empty(shape=(len(self.records), len(RECORDS_TABLE_COLUMNS))).astype(np.int)
-        #
-        # for c, rec in enumerate(self.records):
-        #     if ERROR_WRONG_EOR not in rec.errors:
-        #         if rec.header.Type == REC_TYPE_ADC:
-        #             self.records_table[c, :] = [rec.header.UnixTime, rec.header.PacketIndex, rec.header.Type,
-        #                                         rec.offset+rec.HeaderSize, rec.header.Length-4,
-        #                                         len([x if x is not None else 0 for x in rec.header.ChannelMap]), 0]
-        #         if rec.header.Type == REC_TYPE_MOTION:
-        #             self.records_table[c, :] = [rec.header.UnixTime, rec.header.PacketIndex, rec.header.Type,
-        #                                         rec.offset + rec.HeaderSize, rec.header.Length - 4,
-        #                                         0, rec.header.ChannelMap]
-        #
-        # # sort by PacketIndex
-        # self.records_table = self.records_table[self.records_table[:, 1].argsort()]
-       #delattr(self, 'records')
+        self.records = sorted(self.records, key=lambda x: (x.header.UnixTime + x.header.UnixMs/1000), reverse=False)

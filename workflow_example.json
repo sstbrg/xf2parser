@@ -5,8 +5,8 @@
       "input": {
         "secrets": [ ],
         "vars": {
-          "INPUT": "s3://x-cognito/data for 1.3 HW and FW testing/HW_1.2_FW_1.3/20220621_02C3_HW_1.2_FW_14.6.0.25_dummy/RECORDS/",
-          "OUTPUT": "s3://x-cognito/data for 1.3 HW and FW testing/HW_1.2_FW_1.3/20220621_02C3_HW_1.2_FW_14.6.0.25_dummy.edf"
+          "INPUT": "s3://xtrodes-danila/public/cognito/xtrodesclient/us-east-1:cc6a05a3-ebba-4ca3-b8c4-a0ac8e044d6a/20220728_7E88_0x41_502_sine_31_1_8ch-.~1659038988844/",
+          "OUTPUT": "s3://x-cognito/data for 1.3 HW and FW testing/HW_1.2_FW_1.3/20220728_7E88_0x41_502_sine_31_1_8ch.edf"
         },
         "version": {
           "image": "441546564921.dkr.ecr.us-east-1.amazonaws.com/xf2parser:latest"

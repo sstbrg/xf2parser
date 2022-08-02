@@ -120,9 +120,10 @@ class EDFProcessor(object):
                     if event_date_time > self.end_of_recording_to_edf:
                         tmp = {}
                         tmp['EventName'] = 'End of Data'
-                        self.edfwriter.writeAnnotation(self.end_of_recording_to_edf, duration, tmp['EventName'])
+                        self.edfwriter.writeAnnotation((self.end_of_recording_to_edf - rec_start).total_seconds(),
+                                                       duration, tmp['EventName'])
                         event['EventName'] = "App End Recording"
-                        self.edfwriter.writeAnnotation(event_date_time, duration, event['EventName'])
+                        # self.edfwriter.writeAnnotation((event_date_time-rec_start).total_seconds(),duration, event['EventName'])
 
                 self.edfwriter.writeAnnotation((event_date_time - rec_start).total_seconds(), duration,
                                                event['EventName'])

@@ -34,7 +34,24 @@ class Parser(object):
         rule = re.compile(fnmatch.translate(which), re.IGNORECASE)
         return [os.path.join(where, name) for name in os.listdir(where) if rule.match(name)]
 
+
+
+
+
+
+
     def process_files(self, exclude=()):
+
+        discontinuity_test_flag = 1
+        import matplotlib.pyplot as plt
+        first_timestamp_utx = 0
+        prev_offset = 0
+        dict_of_bad_samples = dict()
+        dict_of_bad_recs = dict()
+        dict_of_bad_recs_unix_time = dict()
+
+
+
         file_list = sorted(self.findfiles('*'+FILE_FORMAT, self.work_directory))
         # every file usually has 124560 samples of adc data and 94545 samples of gyro data
         # infer final array size, usually there are 1038 adc records of 3840 bytes per file and 369 motion records of size 510 bytes
@@ -56,13 +73,15 @@ class Parser(object):
         flag_accl = False
 
 
+
         for c, filepath in enumerate(file_list):
 
             print('INFO: FILE: collecting data from records of %s' % filepath)
             f = File(filepath=filepath)
             f.get_records()
-            if not self._check_if_records_are_chronological(f.records):
-                print('ERROR: FILE: records are not chronological in file %s' % filepath)
+
+            #if not self._check_if_records_are_chronological(f.records):
+            #    print('ERROR: FILE: records are not chronological in file %s' % filepath)
 
             # we need to fill a matrix of [samples x channels]
             # in the worst case scenario, there will be one channel active so the data matrix will be [1 x all the samples]
@@ -72,6 +91,8 @@ class Parser(object):
             num_of_records = len(f.records)
             print('INFO: FILE: there are %d records' % num_of_records)
 
+            if c==0:
+                t0 =  f.records[0].header.UnixTime + f.records[0].header.UnixMs/1000
 
             for c, rec in enumerate(f.records):
                 if ERROR_WRONG_EOR not in rec.errors and ERROR_HEADER_POINTS_BEYOND_EOF not in rec.errors:
@@ -81,7 +102,57 @@ class Parser(object):
                         data[REC_TYPE_ADC][offset[REC_TYPE_ADC]:offset[REC_TYPE_ADC] + int((rec.header.Length - 6)/2)] = \
                             np.fromstring(f.filecontents[data_offset:data_offset + (rec.header.Length - 6)],
                                           dtype='<u2')
+
+
+                        prev_offset = offset[REC_TYPE_ADC]
                         offset[REC_TYPE_ADC] += int((rec.header.Length - 6) / 2)
+
+
+                        # ---------------------------------------------------------- #
+
+                        """
+                        final data structure is :
+                        
+                        dict[num of bad ADC rec] = list(dict[num of ch] = idx of bad sample)
+                        dict[num of bad ADC rec] = unix time of the "right" record
+                        """
+
+                        list_of_channels = rec.header.ChannelMap
+                        number_of_channels = len(list_of_channels)
+                        prev_unix_time = rec.header.UnixTime
+
+                        #take care about c that not in every c there is adc data
+
+                        data_to_test = data[REC_TYPE_ADC][prev_offset:offset[REC_TYPE_ADC]]
+                        data_to_test = data_to_test - np.float_power(2,ADC_BITS - 1)  # ADC_RESOLUTION * (data[REC_TYPE_ADC] - np.float_power(2, ADC_BITS - 1))
+                        data_to_test = data_to_test.astype(np.int16)
+                        data_reshaped = np.reshape(data_to_test, (-1, number_of_channels))
+                        data_reshaped = np.transpose(data_reshaped)
+
+                        list_of_bad_samples = dict()
+                        variance = 10 #uV
+                        standart_diff = data_reshaped[0][1] - data_reshaped[0][0]
+
+                        flag_loss_not_in_all_channels = 0
+                        flag_loss_appear = 0
+
+                        for idx, ch in enumerate(data_reshaped):
+                            new_arr = np.abs(np.diff(ch))
+                            bad_diff_idx_arr = np.where(new_arr >= 2 * standart_diff + variance)
+                            if len(bad_diff_idx_arr[0]) != 0:
+                                flag_loss_appear = 1
+                                dict_of_bad_samples[idx] = bad_diff_idx_arr[0]
+
+                        if len(dict_of_bad_samples) != number_of_channels and len(dict_of_bad_samples) != 0:
+                            flag_loss_not_in_all_channels = 1
+
+                        if flag_loss_appear == 1:
+                            related_time = np.round(rec.header.UnixTime + rec.header.UnixMs / 1000 - t0, 2)
+                            dict_of_bad_recs[c] = dict_of_bad_samples
+                            dict_of_bad_recs_unix_time[c] = rec.header.UnixTime + rec.header.UnixMs / 1000
+
+                               # ------------------------------------------------- #
+
 
                     elif rec.header.Type == REC_TYPE_MOTION_GYRO_AND_ACCL and REC_TYPE_MOTION_GYRO_AND_ACCL not in exclude:
                         if not flag_gyro or not flag_accl:

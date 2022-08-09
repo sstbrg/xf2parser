@@ -38,6 +38,12 @@ class Record(object):
             return True
 
     def _parse_header(self, content):
+
+        if self.offset + self.HeaderSize > len(content):
+            self.errors.append(ERROR_HEADER_POINTS_BEYOND_EOF)
+            print(ERROR_HEADER_POINTS_BEYOND_EOF)
+            return False
+
         parsed = self._HeaderStruct.parse(content[self.offset:self.offset+self.HeaderSize])
 
         if parsed.Sor != START_OF_RECORD:

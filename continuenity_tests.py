@@ -33,8 +33,7 @@ def search_folder(bucket, prefix, pattern, s3_client):
     result = s3_client.list_objects(Bucket=bucket, Prefix=prefix, Delimiter='/')
     for o in result.get('CommonPrefixes'):
         prefix = o.get('Prefix')
-        if 'tri' in prefix:
-            # print(prefix)
+        if pattern in prefix:
             folders.append(prefix)
     return folders
 
@@ -82,6 +81,8 @@ def download_tested_data(root_dir='DATA', pattern='tri'):
         local_folder_name = f'{root_dir}/{folder.split("/")[-2]}'
         if not os.path.isdir(local_folder_name):
             sync_from_s3(f's3://{bucket_name}/{folder}', local_folder_name)
+        else:
+            print(f"{local_folder_name} is found locally")
 
 
 def save_dict_as_csv(dict, fname):
@@ -208,16 +209,19 @@ def test_single_file(databatch, records):
 
 def continuenity_test(data_gen):
     session_dict = dict()
+    i = 0
     for databatch, filepath, records, detected_data_types in data_gen:
-
         single_file_dict = test_single_file(databatch, records)
         if single_file_dict['isempty'] != 1:
-            session_dict[filepath.split('\\')[-1]] = single_file_dict
+            i += 1
+            if i > 10:
+                session_dict[filepath.split('\\')[-1]] = single_file_dict
     return session_dict
 
 
 def main():
     rootdir = 'DATA'
+    results_subdir = 'continuity_results'
     for file in os.listdir(rootdir):
         d = os.path.join(rootdir, file)
         if os.path.isdir(d):
@@ -226,12 +230,14 @@ def main():
             data_gen = parser.process_files(exclude=())
             try:
                 session_dict = continuenity_test(data_gen)
-            except Exception:
-                print(f'Error in {local_work_directory} dataset')
+            except Exception as e:
+                print(f'Error in {local_work_directory} dataset : {str(e)}')
                 continue
             print(session_dict)
             if len(list(session_dict.keys())) != 0:
                 save_dict_as_csv(session_dict, f'{d}_continuity_stats.csv')
+            else:
+                print(f'Empty output in {d}')
 
 
 if __name__ == '__main__':

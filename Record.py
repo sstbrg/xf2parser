@@ -20,6 +20,7 @@ class Record(object):
     _EORStruct = attr.field(default=RecordStruct().EOR)
     EORSize = attr.field(default=0)
     header = attr.field(default=None)
+    size_of_data = attr.field(default=int(0))
     errors = attr.field(default=list())
     eor = attr.field(default=None)
 
@@ -68,6 +69,10 @@ class Record(object):
             elif parsed.ChannelMap == REC_TYPE_MOTION_GYRO_AND_ACCL:
                 parsed.Type = REC_TYPE_MOTION_GYRO_AND_ACCL
                 parsed.ChannelMap = REC_TYPE_MOTION_GYRO_AND_ACCL_CHANNELS
+
+        # calculate data length
+        #     self.size_of_data_in_samples = int((parsed.Length - 6)/2)
+
         return parsed
 
 

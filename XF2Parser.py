@@ -73,7 +73,7 @@ class Parser(object):
         flag_accl = False
 
 
-
+        dataconc = list()
         for c, filepath in enumerate(file_list):
 
             print('INFO: FILE: collecting data from records of %s' % filepath)
@@ -108,6 +108,30 @@ class Parser(object):
                         offset[REC_TYPE_ADC] += int((rec.header.Length - 6) / 2)
 
 
+                        # if c ==35:
+                        #     list_of_channels = rec.header.ChannelMap
+                        #     number_of_channels = len(list_of_channels)
+                        #     data_to_test = data[REC_TYPE_ADC][prev_offset:offset[REC_TYPE_ADC]]
+                        #     data_to_test = data_to_test - np.float_power(2,
+                        #                                                  ADC_BITS - 1)  # ADC_RESOLUTION * (data[REC_TYPE_ADC] - np.float_power(2, ADC_BITS - 1))
+                        #     data_to_test = data_to_test.astype(np.int16)
+                        #     data_reshaped = np.reshape(data_to_test, (-1, number_of_channels))
+                        #     data_reshaped = np.transpose(data_reshaped)
+                        #
+                        #     dataconc = data_reshaped[0]
+                        #     print(1)
+                        #
+                        # if c ==36:
+                        #     list_of_channels = rec.header.ChannelMap
+                        #     number_of_channels = len(list_of_channels)
+                        #     data_to_test = data[REC_TYPE_ADC][prev_offset:offset[REC_TYPE_ADC]]
+                        #     data_to_test = data_to_test - np.float_power(2,
+                        #                                                  ADC_BITS - 1)  # ADC_RESOLUTION * (data[REC_TYPE_ADC] - np.float_power(2, ADC_BITS - 1))
+                        #     data_to_test = data_to_test.astype(np.int16)
+                        #     data_reshaped = np.reshape(data_to_test, (-1, number_of_channels))
+                        #     data_reshaped = np.transpose(data_reshaped)
+                        #     np.concatenate((dataconc,data_reshaped[0]))
+                        #     print(1)
                         # ---------------------------------------------------------- #
 
                         """
@@ -117,39 +141,39 @@ class Parser(object):
                         dict[num of bad ADC rec] = unix time of the "right" record
                         """
 
-                        list_of_channels = rec.header.ChannelMap
-                        number_of_channels = len(list_of_channels)
-                        prev_unix_time = rec.header.UnixTime
-
-                        #take care about c that not in every c there is adc data
-
-                        data_to_test = data[REC_TYPE_ADC][prev_offset:offset[REC_TYPE_ADC]]
-                        data_to_test = data_to_test - np.float_power(2,ADC_BITS - 1)  # ADC_RESOLUTION * (data[REC_TYPE_ADC] - np.float_power(2, ADC_BITS - 1))
-                        data_to_test = data_to_test.astype(np.int16)
-                        data_reshaped = np.reshape(data_to_test, (-1, number_of_channels))
-                        data_reshaped = np.transpose(data_reshaped)
-
-                        list_of_bad_samples = dict()
-                        variance = 10 #uV
-                        standart_diff = data_reshaped[0][1] - data_reshaped[0][0]
-
-                        flag_loss_not_in_all_channels = 0
-                        flag_loss_appear = 0
-
-                        for idx, ch in enumerate(data_reshaped):
-                            new_arr = np.abs(np.diff(ch))
-                            bad_diff_idx_arr = np.where(new_arr >= 2 * standart_diff + variance)
-                            if len(bad_diff_idx_arr[0]) != 0:
-                                flag_loss_appear = 1
-                                dict_of_bad_samples[idx] = bad_diff_idx_arr[0]
-
-                        if len(dict_of_bad_samples) != number_of_channels and len(dict_of_bad_samples) != 0:
-                            flag_loss_not_in_all_channels = 1
-
-                        if flag_loss_appear == 1:
-                            related_time = np.round(rec.header.UnixTime + rec.header.UnixMs / 1000 - t0, 2)
-                            dict_of_bad_recs[c] = dict_of_bad_samples
-                            dict_of_bad_recs_unix_time[c] = rec.header.UnixTime + rec.header.UnixMs / 1000
+                        # list_of_channels = rec.header.ChannelMap
+                        # number_of_channels = len(list_of_channels)
+                        # prev_unix_time = rec.header.UnixTime
+                        #
+                        # #take care about c that not in every c there is adc data
+                        #
+                        # data_to_test = data[REC_TYPE_ADC][prev_offset:offset[REC_TYPE_ADC]]
+                        # data_to_test = data_to_test - np.float_power(2,ADC_BITS - 1)  # ADC_RESOLUTION * (data[REC_TYPE_ADC] - np.float_power(2, ADC_BITS - 1))
+                        # data_to_test = data_to_test.astype(np.int16)
+                        # data_reshaped = np.reshape(data_to_test, (-1, number_of_channels))
+                        # data_reshaped = np.transpose(data_reshaped)
+                        #
+                        # list_of_bad_samples = dict()
+                        # variance = 10 #uV
+                        # standart_diff = data_reshaped[0][1] - data_reshaped[0][0]
+                        #
+                        # flag_loss_not_in_all_channels = 0
+                        # flag_loss_appear = 0
+                        #
+                        # for idx, ch in enumerate(data_reshaped):
+                        #     new_arr = np.abs(np.diff(ch))
+                        #     bad_diff_idx_arr = np.where(new_arr >= 2 * standart_diff + variance)
+                        #     if len(bad_diff_idx_arr[0]) != 0:
+                        #         flag_loss_appear = 1
+                        #         dict_of_bad_samples[idx] = bad_diff_idx_arr[0]
+                        #
+                        # if len(dict_of_bad_samples) != number_of_channels and len(dict_of_bad_samples) != 0:
+                        #     flag_loss_not_in_all_channels = 1
+                        #
+                        # if flag_loss_appear == 1:
+                        #     related_time = np.round(rec.header.UnixTime + rec.header.UnixMs / 1000 - t0, 2)
+                        #     dict_of_bad_recs[c] = dict_of_bad_samples
+                        #     dict_of_bad_recs_unix_time[c] = rec.header.UnixTime + rec.header.UnixMs / 1000
 
                                # ------------------------------------------------- #
 

@@ -6,17 +6,10 @@ import pyedflib
 import matplotlib.pyplot as plt
 import numpy as np
 
-# local_work_directory = r'C:\Users\ivan\OneDrive - xtrodes\Desktop\DATA\night test 08.08.2022\7e88'
-#
-# parser = Parser(work_directory=local_work_directory)
-# data_gen = parser.process_files(exclude=())
-
 import os
-
 import csv
 
-"###################################S3 Convenience functions and results storing (misha) ###########################################"
-
+local_work_directory = r'C:\Users\ivan\OneDrive - xtrodes\Desktop\DATA\night test 08.08.2022\7e7f'
 
 def save_dict_as_csv(dict, fname):
     w = csv.writer(open(fname, "w"))

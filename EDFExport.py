@@ -6,7 +6,7 @@ import numpy as np
 import pyedflib
 import pytz as pytz
 import math
-from .XF2Types import *
+from XF2Types import *
 from pathlib import Path
 import math
 
@@ -155,31 +155,33 @@ class EDFProcessor(object):
         (flag_adc, flag_gyro, flag_accl) = (detected_signal_types[REC_TYPE_ADC],
                                             detected_signal_types[REC_TYPE_MOTION_GYRO],
                                             detected_signal_types[REC_TYPE_MOTION_ACCL])
-
+        adc_index = 0
         for rec in records:
             if flag_adc and rec.header.Type == REC_TYPE_ADC:
                 #self._channel_maps[REC_TYPE_ADC] = rec.header.ChannelMap
                 channel_map[rec.header.ChannelMap] = rec.header.ChannelMap
                 sampling_rates[rec.header.ChannelMap] = rec.header.SampleRate
-                label_prefixes[rec.header.ChannelMap] = 'ADC-'
+                label_prefixes[rec.header.ChannelMap] = f'{self.session_details["modalities"][adc_index]} Ch-{adc_index+1}'
                 dimensions[rec.header.ChannelMap] = 'uV'
                 physical_maxs[rec.header.ChannelMap] = EL_PHYS_MAX
                 physical_mins[rec.header.ChannelMap] = EL_PHYS_MIN
                 digital_maxs[rec.header.ChannelMap] = EL_DIG_MAX
                 digital_mins[rec.header.ChannelMap] = EL_DIG_MIN
                 flag_adc = False
-
+            acc_axis=['x','y','z']
+            axis_index =0
             if flag_accl and rec.header.Type == REC_TYPE_MOTION_ACCL:
                 #self._channel_maps[REC_TYPE_MOTION_ACCL] = rec.header.ChannelMap
                 channel_map[rec.header.ChannelMap] = rec.header.ChannelMap
                 sampling_rates[rec.header.ChannelMap] = rec.header.SampleRate
-                label_prefixes[rec.header.ChannelMap] = 'ACCL-'
+                label_prefixes[rec.header.ChannelMap] = f'Accelerometer_{acc_axis[axis_index]}'
                 dimensions[rec.header.ChannelMap] = 'g'
                 physical_maxs[rec.header.ChannelMap] = ACCL_PHYS_MAX
                 physical_mins[rec.header.ChannelMap] = ACCL_PHYS_MIN
                 digital_maxs[rec.header.ChannelMap] = ACCL_DIG_MAX
                 digital_mins[rec.header.ChannelMap] = ACCL_DIG_MIN
                 flag_accl = False
+                axis_index+=1
 
             if flag_gyro and rec.header.Type == REC_TYPE_MOTION_GYRO:
                 #self._channel_maps[REC_TYPE_MOTION_GYRO] = rec.header.ChannelMap

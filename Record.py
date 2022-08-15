@@ -50,7 +50,7 @@ class Record(object):
             self.errors.append(ERROR_WRONG_SOR_IN_HEADER)
             print(ERROR_WRONG_SOR_IN_HEADER)
 
-        if self.offset + self.HeaderSize + parsed.Length - 6 - 1 + self.EORSize > len(content):
+        if self.offset + self.HeaderSize + parsed.Length - 6 - 1 + self.EORSize > len(content)-1:
             self.errors.append(ERROR_HEADER_POINTS_BEYOND_EOF)
             print(ERROR_HEADER_POINTS_BEYOND_EOF)
             return False

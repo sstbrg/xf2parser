@@ -3,6 +3,9 @@ import pyedflib
 from XF2Types import *
 from pathlib import Path
 import math
+import fnmatch
+import re
+import os
 
 @attr.define
 class EDFProcessor(object):
@@ -141,6 +144,23 @@ class EDFProcessor(object):
             self._left_to_read[type] += databatch[type].shape[0]
             #print('INFO: done writing to buffer')
 
+    @staticmethod
+    def findfiles(which, where='.'):
+        # Returns list of filenames from `where` path matched by 'which'
+        # shell pattern. Matching is case-insensitive.
+        rule = re.compile(fnmatch.translate(which), re.IGNORECASE)
+        return [os.path.join(where, name) for name in os.listdir(where) if rule.match(name)]
+    def check_dataset_size(self, work_directory):
+        file_list = sorted(self.findfiles('*' + FILE_FORMAT, work_directory))
+        total_size = 0 #bytes
+        for f in file_list:
+            total_size += os.path.getsize(f)
+        if total_size < MIN_SIZE_OF_DATASET_IN_BYTES:
+            print('ERROR: EDF: size of dataset is %d and it is too small to create an EDF.' % total_size)
+            return False
+        else:
+            return True
+
     def save_to_edf(self, data_generator, write_record_created_annotations):
         flag_first_batch = True
         #onset_in_seconds = 0
@@ -208,33 +228,13 @@ class EDFProcessor(object):
             # now there's at least one data type which has less samples in buffer to read from
             # than 1s worth of data...
             # in this case we need to populate the buffer further
-
-            #if all([self._left_to_read[type] >= self._number_of_samples_in_second[type] for type in self._types]):
-                # if any([self._left_to_read[type] < self._number_of_samples_in_second[type] for type in self._types]):
-                #     for type in self._types:
-                #         # relocate leftover data to start of buffer
-                #         self._buffer[type][:self._left_to_read[type]] = self._buffer[type][self._read_offset[type]:
-                #                                                                            self._read_offset[type] +
-                #                                                                            self._left_to_read[type]]
-                #         # pad with zeros anything above leftovers
-                #         self._buffer[type][self._left_to_read[type]:] = 0
-                #
-                #         # reset pointer for data read
-                #         self._read_offset[type] = 0
-
             # left_to_read points to the head
             # and read_offset points to the tail
             # we write to the head
             # and read from the tail towards the head
-
-            #for rec in files_metadata:
-             #   if rec['Type'] == REC_TYPE_ADC:
-             #       onset_in_seconds += databatch[REC_TYPE_ADC].shape[0]/rec['SamplingRate']/len(rec['ChannelMap'])
-
             # relocate the tail to 0, keep leftovers and pad
             # anything over the head with 0's
 
-            #if any([(self._buffer[type].shape[0] - self._left_to_read[type]) < self._number_of_samples_in_second[type] for type in self._types]):
             for type in self._types:
                 # if left_to_read is negative (we wrote 0 to edf) then reset the counter
                 if self._left_to_read[type] < 0:
@@ -245,7 +245,7 @@ class EDFProcessor(object):
                                                                                             self._read_offset[type] +
                                                                                             self._left_to_read[type]]
                 # pad with zeros anything above leftovers
-                self._buffer[type][self._left_to_read[type]:] = 10000
+                self._buffer[type][self._left_to_read[type]:] = 0
 
                 # reset pointer for data read
                 self._read_offset[type] = 0

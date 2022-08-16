@@ -28,7 +28,8 @@ class Parser(object):
                         prev_time = rec.header.UnixTime + rec.header.UnixMs / 1000
         return True
 
-    def findfiles(self, which, where='.'):
+    @staticmethod
+    def findfiles(which, where='.'):
         # Returns list of filenames from `where` path matched by 'which'
         # shell pattern. Matching is case-insensitive.
         rule = re.compile(fnmatch.translate(which), re.IGNORECASE)
@@ -61,8 +62,8 @@ class Parser(object):
             print('INFO: FILE: collecting data from records of %s' % filepath)
             f = File(filepath=filepath)
             f.get_records()
-            if not self._check_if_records_are_chronological(f.records):
-                print('ERROR: FILE: records are not chronological in file %s' % filepath)
+            #if not self._check_if_records_are_chronological(f.records):
+            #    print('ERROR: FILE: records are not chronological in file %s' % filepath)
 
             # we need to fill a matrix of [samples x channels]
             # in the worst case scenario, there will be one channel active so the data matrix will be [1 x all the samples]

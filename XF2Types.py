@@ -1,5 +1,8 @@
 import attr
 from construct import *
+
+MIN_SIZE_OF_DATASET_IN_BYTES = 1048576
+
 START_OF_SAMPLING_RECORD = b'\x0D\xA0'
 START_OF_MOTION_RECORD = b'\x0D\xA1'
 REC_TYPE_ADC = 160

@@ -55,10 +55,13 @@ class Record(object):
             print(ERROR_HEADER_POINTS_BEYOND_EOF)
             return False
 
-        if content[
-            self.offset + self.HeaderSize + parsed.Length - 6 - 1 + self.EORSize] != END_OF_RECORD:
-            self.errors.append(ERROR_WRONG_EOR)
-            print(ERROR_WRONG_EOR)
+        try:
+            if content[
+                self.offset + self.HeaderSize + parsed.Length - 6 - 1 + self.EORSize] != END_OF_RECORD:
+                self.errors.append(ERROR_WRONG_EOR)
+                print(ERROR_WRONG_EOR)
+        except:
+            print(1)
 
         if parsed.Type == REC_TYPE_ADC:
             parsed.ChannelMap = [num if val == '1' else None for num, val in

@@ -144,6 +144,7 @@ class EDFProcessor(object):
     def save_to_edf(self, data_generator, write_record_created_annotations):
         flag_first_batch = True
         #onset_in_seconds = 0
+
         for databatch, filepath, records, detected_data_types in data_generator:
             if flag_first_batch:
                 # prep signal headers and edf writer

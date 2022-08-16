@@ -6,7 +6,7 @@ import numpy as np
 import pyedflib
 import pytz as pytz
 import math
-from XF2Types import *
+from .XF2Types import *
 from pathlib import Path
 import math
 
@@ -161,7 +161,11 @@ class EDFProcessor(object):
                 #self._channel_maps[REC_TYPE_ADC] = rec.header.ChannelMap
                 channel_map[rec.header.ChannelMap] = rec.header.ChannelMap
                 sampling_rates[rec.header.ChannelMap] = rec.header.SampleRate
-                label_prefixes[rec.header.ChannelMap] = f'{self.session_details["modalities"][adc_index]} Ch-{adc_index+1}'
+                if self.session_details["modalities"]:
+                    label_prefixes[rec.header.ChannelMap] = f'{self.session_details["modalities"][adc_index]} Ch-'
+                    adc_index+=1
+                else:
+                    label_prefixes[rec.header.ChannelMap] = 'ADC-'
                 dimensions[rec.header.ChannelMap] = 'uV'
                 physical_maxs[rec.header.ChannelMap] = EL_PHYS_MAX
                 physical_mins[rec.header.ChannelMap] = EL_PHYS_MIN
@@ -200,7 +204,7 @@ class EDFProcessor(object):
                 channel_map[rec.header.ChannelMap] = rec.header.ChannelMap
                 sampling_rates[rec.header.ChannelMap] = rec.header.SampleRate
                 label_prefixes[rec.header.ChannelMap[:3]] = 'GYRO-'
-                label_prefixes[rec.header.ChannelMap[3:]] = 'ACCL-'
+                label_prefixes[rec.header.ChannelMap[3:]] = [f'Accelerometer_{x}' for x in acc_axis]
                 dimensions[rec.header.ChannelMap[:3]] = 'dps'
                 dimensions[rec.header.ChannelMap[3:]] = 'g'
                 physical_maxs[rec.header.ChannelMap[:3]] = GYRO_PHYS_MAX
@@ -240,7 +244,7 @@ class EDFProcessor(object):
 
         # check for adc, accl and gyro presence
 
-        signal_headers = [{'label': label_prefixes[cc] + str(int(ii)),
+        signal_headers = [{'label': label_prefixes[cc] + (str(int(ii)+1) if label_prefixes[cc].endswith('-') else ''),
                            'dimension': dimensions[cc],
                            'sample_frequency': sample_freqs[cc],
                            'physical_max': physical_maxs[cc],
@@ -291,11 +295,11 @@ class EDFProcessor(object):
                 # calculate the number of samples per second for all channels and the number of channels per signal type
                 for x in detected_data_types.keys():
                     if x == REC_TYPE_ADC:
-                        idxs = [index for (index, d) in enumerate(signal_headers) if 'ADC' in d['label']]
+                        idxs = [index for (index, d) in enumerate(signal_headers) if 'ADC' in d['label'] or 'Ch-' in d['label']]
                     elif x == REC_TYPE_MOTION_GYRO:
                         idxs = [index for (index, d) in enumerate(signal_headers) if 'GYRO' in d['label']]
                     elif x == REC_TYPE_MOTION_ACCL:
-                        idxs = [index for (index, d) in enumerate(signal_headers) if 'ACCL' in d['label']]
+                        idxs = [index for (index, d) in enumerate(signal_headers) if 'ACCL' in d['label'] or  'Accelerometer' in d['label']]
                     self._number_of_channels[x] = len(idxs)
                     self._number_of_samples_in_second[x] = int(signal_headers[idxs[0]]['sample_frequency'] * len(idxs))
 

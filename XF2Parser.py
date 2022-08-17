@@ -2,9 +2,16 @@ from File import *
 import os
 import numpy as np
 import fnmatch
+try:
+    from utilities import *
+except:
+    pass
 
 @attr.define
 class Parser(object):
+    identity = attr.ib(default='')
+    dataset = attr.ib(default='')
+    total_keys = attr.ib(default=0)
     work_directory = attr.field(kw_only=True)
     data = attr.field(default={REC_TYPE_ADC: None,
                                REC_TYPE_MOTION_GYRO: None,
@@ -58,6 +65,13 @@ class Parser(object):
 
 
         for c, filepath in enumerate(file_list):
+            if (c + 1) % 3 == 0:
+                try:
+                    update_edf_status_dynamodb(self.identity,
+                                               self.dataset,
+                                               "Generating EDF files", 100 / self.total_keys * 3)
+                except:
+                    pass
 
             print('INFO: FILE: collecting data from records of %s' % filepath)
             f = File(filepath=filepath)

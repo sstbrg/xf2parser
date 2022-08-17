@@ -6,7 +6,7 @@ import numpy as np
 import pyedflib
 import pytz as pytz
 import math
-from .XF2Types import *
+from XF2Types import *
 from pathlib import Path
 import math
 import fnmatch

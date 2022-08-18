@@ -28,7 +28,8 @@ class Parser(object):
                         prev_time = rec.header.UnixTime + rec.header.UnixMs / 1000
         return True
 
-    def findfiles(self, which, where='.'):
+    @staticmethod
+    def findfiles(which, where='.'):
         # Returns list of filenames from `where` path matched by 'which'
         # shell pattern. Matching is case-insensitive.
         rule = re.compile(fnmatch.translate(which), re.IGNORECASE)

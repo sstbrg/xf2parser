@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 
 from XF2Parser import *
 from EDFExport import *
@@ -12,6 +11,9 @@ parser = Parser(work_directory=local_work_directory)
 data_gen = parser.process_files(exclude=())
 
 # edf creation part
+edfer = EDFProcessor(file_path=r'result\20220807183949.edf')
+if edfer.check_dataset_size(local_work_directory):
+    edfer.save_to_edf(data_generator=data_gen, write_record_created_annotations=False)
 
 adc_timelist = list()
 imu_timelist = list()

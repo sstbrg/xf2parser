@@ -9,6 +9,8 @@ import os
 import csv
 import collections
 
+deleteme = 0
+
 def flatten(d, parent_key='', sep='_'):
     items = []
     for k, v in d.items():
@@ -38,6 +40,8 @@ def validate_periodic_signal_in_data_and_provide_vdif(signal, fs, freq):
     return vdiff
 
 def test_single_file(databatch, records, triangle_flag=0, test_on_one_channel=1, tested_freq=-1):
+
+
     fs = -1
 
     first_file_flag = 1
@@ -78,11 +82,16 @@ def test_single_file(databatch, records, triangle_flag=0, test_on_one_channel=1,
     # find the initials
     # ----------------
     if first_file_flag:
+
+
+
         #  todo : fs = records[0].header.??? not sure
         fs = 4000  # todo: get rid of it
         first_timestamp_in_file = records[0].header.UnixTime + records[0].header.UnixMs / 1000
+        print(first_timestamp_in_file)
         offset = 0
         first_file_flag = 0
+
 
     for rec in records:
         if rec.type == REC_TYPE_ADC:
@@ -267,7 +276,7 @@ def test_single_file(databatch, records, triangle_flag=0, test_on_one_channel=1,
 
     return statistics,problems_with_records,problems_with_ADC_continuity
 
-def test_session(session_folder, triangle_flag=0, test_on_one_channel=1, tested_freq=-1, gather_statistics = 1):
+def test_session(session_folder, triangle_flag=1, test_on_one_channel=1, tested_freq=31, gather_statistics = 1):
     '''
 
     Structure of session_dict:
@@ -328,7 +337,11 @@ def test_session(session_folder, triangle_flag=0, test_on_one_channel=1, tested_
     for databatch, filepath, records, detected_data_types in data_gen:
 
         # todo add full recording time, file size, stats for bad files
+        #todo add description about : file size
         # todo add last adc timestamp for each dataset ( last adc rec time + samples/fs )
+        # todo add tests between files
+
+
         count = count +1
 
         single_file_dict = dict()
@@ -367,6 +380,9 @@ def test_session(session_folder, triangle_flag=0, test_on_one_channel=1, tested_
 
         if gather_bad_statistic:
             single_file_dict['statistics'] = statistics
+
+            size_in_kb = np.round((os.path.getsize(filepath) / 1024),2)
+            single_file_dict['statistics']['filesize'] = size_in_kb
             gather_bad_statistic = 0
 
         if gather_statistics:
@@ -381,6 +397,12 @@ def test_session(session_folder, triangle_flag=0, test_on_one_channel=1, tested_
 
 
 
+    # session_folder
+    path_to_save = os.path.join('result', 'FW13', f"{os.path.basename(session_folder)}.edf")
+    edfer = EDFProcessor(file_path=path_to_save)
+    if edfer.check_dataset_size(session_folder):
+        edfer.save_to_edf(data_generator=data_gen, write_record_created_annotations=False)
+
     dict_name = session_folder.split('\\')[-1]
     with open(f'{dict_name}_results_dict.pkl', 'wb') as f:
         pickle.dump(session_dict, f)
@@ -392,20 +414,82 @@ def test_session(session_folder, triangle_flag=0, test_on_one_channel=1, tested_
 
     return dict_name,session_dict
 
+
+
+def save_to_excel(dict_name,session_dict):
+    import openpyxl
+    wb = openpyxl.Workbook()
+    ws = wb.active
+
+    #todo add headers : A - filename
+    # B - bad tdiff idx
+    # C - bad tdif vals
+    # D - bad idx idx
+    # E - bad idx val
+    # F - bad data idx (between)
+    # G - bad data val (between)
+    # F - bad data idx (inside)
+    # G - bad data val (inside)
+
+
+    Acount = 1
+    Aplace = 'A' + str(Acount)
+    Bcount = 2
+    Bplace = 'B' + str(Bcount)
+
+    places = ['A','B','C','D','E','F','G']
+
+    for item in session_dict.items():
+
+        Aplace = 'A' + str(Acount)
+        wb[places[0]] = item[0] # file name to A row
+        wb[places[1] + str(1)] = 'idx_of_record_with_bad_tdiff'
+        wb[places[2] + str(1)] = 'vals_of_tdiff_of_recs_with_bad_tdiff'
+        wb[places[3] + str(1)] = 'num_of_recs_with_bad_idxdiff'
+        wb[places[4] + str(1)] = 'vals_of_idxdiff_of_recs_with_bad_idxdiff'
+        Acount = Acount + 1
+
+
+        file_dict = item[1]
+        rec_problems = file_dict['problems_with_records']
+        list_num_of_record_with_bad_tdiff = rec_problems['num_of_record_with_bad_tdiff']
+        list_vals_of_tdiff_of_recs_with_bad_tdiff = rec_problems['vals_of_tdiff_of_recs_with_bad_tdiff']
+        list_num_of_recs_with_bad_idxdiff = rec_problems['num_of_recs_with_bad_idxdiff']
+        list_vals_of_idxdiff_of_recs_with_bad_idxdiff = rec_problems['vals_of_idxdiff_of_recs_with_bad_idxdiff']
+
+
+        for item in list_num_of_record_with_bad_tdiff:
+            wb
+
+
+
+
+
+    wb['A1'] = dict_name
+    # wb['B2'] = session_dict[]
+    wb.save("sample.xlsx")
+    wb.close()
+    pass
+
+
+
 def test_chunk_of_sesions_and_create_statistics():
     pass
 
 
-folder = r'C:\Users\ivan\OneDrive - xtrodes\Desktop\DATA\local_data_from18.08\7F0D'
-# dict_name, _ = test_session(folder, triangle_flag=0, test_on_one_channel=0, tested_freq=0,gather_statistics=0)
+local_work_directory = r'C:\Users\ivan\OneDrive - xtrodes\Desktop\DATA\day_23_08_2022\7e7f_day_91'
+
+dict_name, _ = test_session(local_work_directory, triangle_flag=0, test_on_one_channel=0, tested_freq=0,gather_statistics=0)
 
 
+# dd = ''
+# dict_name ='7e7f_results_dict.pkl'
+# with open(f'{dict_name}', 'rb') as f:
+#     loaded_dict = pickle.load(f)
+#     print("done")
 
-dict_name = '7f0d 0-1000_results_dict.pkl'
-with open(f'{dict_name}', 'rb') as f:
-    loaded_dict = pickle.load(f)
 
-    import csv
+    # import csv
     #
     # new_path = open("mytest.csv", "w")
     # z = csv.writer(new_path)

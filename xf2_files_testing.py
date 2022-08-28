@@ -398,10 +398,10 @@ def test_session(session_folder, triangle_flag=1, test_on_one_channel=1, tested_
 
 
     # session_folder
-    path_to_save = os.path.join('result', 'FW13', f"{os.path.basename(session_folder)}.edf")
-    edfer = EDFProcessor(file_path=path_to_save)
-    if edfer.check_dataset_size(session_folder):
-        edfer.save_to_edf(data_generator=data_gen, write_record_created_annotations=False)
+    # savename = r'result\\FW13' + session_folder.split('\\')[-1] + '.edf'
+    # edfer = EDFProcessor(file_path=savename)
+    # if edfer.check_dataset_size(session_folder):
+    #     edfer.save_to_edf(data_generator=data_gen, write_record_created_annotations=False)
 
     dict_name = session_folder.split('\\')[-1]
     with open(f'{dict_name}_results_dict.pkl', 'wb') as f:
@@ -477,16 +477,17 @@ def test_chunk_of_sesions_and_create_statistics():
     pass
 
 
-local_work_directory = r'C:\Users\ivan\OneDrive - xtrodes\Desktop\DATA\day_23_08_2022\7e7f_day_91'
+local_work_directory = r'C:\Users\ivan\OneDrive - xtrodes\Desktop\DATA\SD test\30VSD -7e7f test2'
 
-dict_name, _ = test_session(local_work_directory, triangle_flag=0, test_on_one_channel=0, tested_freq=0,gather_statistics=0)
+# dict_name, _ = test_session(local_work_directory, triangle_flag=0, test_on_one_channel=0, tested_freq=0,gather_statistics=0)
 
 
-# dd = ''
-# dict_name ='7e7f_results_dict.pkl'
-# with open(f'{dict_name}', 'rb') as f:
-#     loaded_dict = pickle.load(f)
-#     print("done")
+dd = local_work_directory.split('\\')[-1] + '_results_dict.pkl'
+# dict_name ='30VSD -7e7f test2_results_dict.pkl'
+dict_name =dd
+with open(f'{dict_name}', 'rb') as f:
+    loaded_dict = pickle.load(f)
+    print("done")
 
 
     # import csv

@@ -7,20 +7,21 @@ import fnmatch
 import re
 import os
 
+
 @attr.define
 class EDFProcessor(object):
-
     file_path = attr.field()
     edfwriter = attr.field(default=None)
     _buffer = attr.field(default={REC_TYPE_ADC: 0, REC_TYPE_MOTION_GYRO: 0, REC_TYPE_MOTION_ACCL: 0})
     _type_flags = attr.field(default={REC_TYPE_ADC: False, REC_TYPE_MOTION_GYRO: False, REC_TYPE_MOTION_ACCL: False})
     _left_to_read = attr.field(default={REC_TYPE_ADC: 0, REC_TYPE_MOTION_GYRO: 0, REC_TYPE_MOTION_ACCL: 0})
-    _number_of_samples_in_second = attr.field(default={REC_TYPE_ADC: 0, REC_TYPE_MOTION_GYRO: 0, REC_TYPE_MOTION_ACCL: 0})
+    _number_of_samples_in_second = attr.field(
+        default={REC_TYPE_ADC: 0, REC_TYPE_MOTION_GYRO: 0, REC_TYPE_MOTION_ACCL: 0})
     _number_of_channels = attr.field(default={REC_TYPE_ADC: 0, REC_TYPE_MOTION_GYRO: 0, REC_TYPE_MOTION_ACCL: 0})
-    #_channel_maps = attr.field(default={REC_TYPE_ADC: [], REC_TYPE_MOTION_GYRO: [], REC_TYPE_MOTION_ACCL: []})
+    # _channel_maps = attr.field(default={REC_TYPE_ADC: [], REC_TYPE_MOTION_GYRO: [], REC_TYPE_MOTION_ACCL: []})
     _read_offset = attr.field(default={REC_TYPE_ADC: 0, REC_TYPE_MOTION_GYRO: 0, REC_TYPE_MOTION_ACCL: 0})
     _types = attr.field(default=[])
-    
+
     def create_signal_headers_from_metadata(self, records, detected_signal_types):
         channel_map = np.zeros(
             shape=(NUMBER_OF_HW_ADC_CHANNELS + NUMBER_OF_HW_GYRO_CHANNELS + NUMBER_OF_HW_ACCL_CHANNELS,))
@@ -39,7 +40,7 @@ class EDFProcessor(object):
 
         for rec in records:
             if flag_adc and rec.header.Type == REC_TYPE_ADC:
-                #self._channel_maps[REC_TYPE_ADC] = rec.header.ChannelMap
+                # self._channel_maps[REC_TYPE_ADC] = rec.header.ChannelMap
                 channel_map[rec.header.ChannelMap] = rec.header.ChannelMap
                 sampling_rates[rec.header.ChannelMap] = rec.header.SampleRate
                 label_prefixes[rec.header.ChannelMap] = 'ADC-'
@@ -51,7 +52,7 @@ class EDFProcessor(object):
                 flag_adc = False
 
             if flag_accl and rec.header.Type == REC_TYPE_MOTION_ACCL:
-                #self._channel_maps[REC_TYPE_MOTION_ACCL] = rec.header.ChannelMap
+                # self._channel_maps[REC_TYPE_MOTION_ACCL] = rec.header.ChannelMap
                 channel_map[rec.header.ChannelMap] = rec.header.ChannelMap
                 sampling_rates[rec.header.ChannelMap] = rec.header.SampleRate
                 label_prefixes[rec.header.ChannelMap] = 'ACCL-'
@@ -63,7 +64,7 @@ class EDFProcessor(object):
                 flag_accl = False
 
             if flag_gyro and rec.header.Type == REC_TYPE_MOTION_GYRO:
-                #self._channel_maps[REC_TYPE_MOTION_GYRO] = rec.header.ChannelMap
+                # self._channel_maps[REC_TYPE_MOTION_GYRO] = rec.header.ChannelMap
                 channel_map[rec.header.ChannelMap] = rec.header.ChannelMap
                 sampling_rates[rec.header.ChannelMap] = rec.header.SampleRate
                 label_prefixes[rec.header.ChannelMap] = 'GYRO-'
@@ -75,7 +76,7 @@ class EDFProcessor(object):
                 flag_gyro = False
 
             if flag_gyro and flag_accl and rec.header.Type == REC_TYPE_MOTION_GYRO_AND_ACCL:
-                #self._channel_maps[REC_TYPE_MOTION_GYRO_AND_ACCL] = rec.header.ChannelMap
+                # self._channel_maps[REC_TYPE_MOTION_GYRO_AND_ACCL] = rec.header.ChannelMap
                 channel_map[rec.header.ChannelMap] = rec.header.ChannelMap
                 sampling_rates[rec.header.ChannelMap] = rec.header.SampleRate
                 label_prefixes[rec.header.ChannelMap[:3]] = 'GYRO-'
@@ -96,16 +97,14 @@ class EDFProcessor(object):
             if not (flag_adc or flag_gyro or flag_accl):
                 break
 
-
-
         return self.create_signal_headers(channel_map=channel_map,
-                                                         label_prefixes=label_prefixes,
-                                                         dimensions=dimensions,
-                                                         sample_freqs=sampling_rates,
-                                                         physical_maxs=physical_maxs,
-                                                         physical_mins=physical_mins,
-                                                         diginal_maxs=digital_maxs,
-                                                         digital_mins=digital_mins)
+                                          label_prefixes=label_prefixes,
+                                          dimensions=dimensions,
+                                          sample_freqs=sampling_rates,
+                                          physical_maxs=physical_maxs,
+                                          physical_mins=physical_mins,
+                                          diginal_maxs=digital_maxs,
+                                          digital_mins=digital_mins)
 
     def create_signal_headers(self, channel_map, label_prefixes, dimensions, sample_freqs, physical_maxs, physical_mins,
                               diginal_maxs, digital_mins):
@@ -128,21 +127,20 @@ class EDFProcessor(object):
                            'digital_min': digital_mins[cc]} for cc, ii in enumerate(channel_map) if not math.isnan(ii)]
         return signal_headers
 
-    #def _init_buffer(self, metadata, type):
-
+    # def _init_buffer(self, metadata, type):
 
     def _write_buffer(self, databatch):
         for type in self._types:
-            #print('INFO: writing to buffers:')
-            #print('Type %s' % type)
-            #print('Data size to fill %d' % databatch[type].shape[0])
-            #print('Offset %d' % self._read_offset[type])
-            #print('Total buffer size %d' % self._buffer[type].shape[0])
-            #print('Bytes left to read %d' % self._left_to_read[type])
+            # print('INFO: writing to buffers:')
+            # print('Type %s' % type)
+            # print('Data size to fill %d' % databatch[type].shape[0])
+            # print('Offset %d' % self._read_offset[type])
+            # print('Total buffer size %d' % self._buffer[type].shape[0])
+            # print('Bytes left to read %d' % self._left_to_read[type])
             self._buffer[type][self._left_to_read[type]:self._left_to_read[type] + databatch[type].shape[0]] = \
                 databatch[type]
             self._left_to_read[type] += databatch[type].shape[0]
-            #print('INFO: done writing to buffer')
+            # print('INFO: done writing to buffer')
 
     @staticmethod
     def findfiles(which, where='.'):
@@ -150,9 +148,10 @@ class EDFProcessor(object):
         # shell pattern. Matching is case-insensitive.
         rule = re.compile(fnmatch.translate(which), re.IGNORECASE)
         return [os.path.join(where, name) for name in os.listdir(where) if rule.match(name)]
+
     def check_dataset_size(self, work_directory):
         file_list = sorted(self.findfiles('*' + FILE_FORMAT, work_directory))
-        total_size = 0 #bytes
+        total_size = 0  # bytes
         for f in file_list:
             total_size += os.path.getsize(f)
         if total_size < MIN_SIZE_OF_DATASET_IN_BYTES:
@@ -163,15 +162,19 @@ class EDFProcessor(object):
 
     def save_to_edf(self, data_generator, write_record_created_annotations):
         flag_first_batch = True
-        #onset_in_seconds = 0
+        # onset_in_seconds = 0
 
         for databatch, filepath, records, detected_data_types in data_generator:
+
+            if testing:
+                test_one_file()
+
             if flag_first_batch:
                 # prep signal headers and edf writer
                 signal_headers = self.create_signal_headers_from_metadata(records, detected_data_types)
                 self.edfwriter = pyedflib.EdfWriter(file_name=self.file_path, n_channels=len(signal_headers))
                 self.edfwriter.setSignalHeaders(signal_headers)
-                
+
                 # prepare buffer
                 for x in detected_data_types.keys():
                     self._buffer[x] = np.zeros(shape=(200000000,), dtype=np.int16)
@@ -193,7 +196,12 @@ class EDFProcessor(object):
                     self._number_of_samples_in_second[x] = int(signal_headers[idxs[0]]['sample_frequency'] * len(idxs))
 
                 ## first record appears at the following time (in seconds)
-                t0 = records[0].header.UnixTime + records[0].header.UnixMs/1000
+                t0 = records[0].header.UnixTime + records[0].header.UnixMs / 1000
+
+                # todo: t0 move to self
+                """
+                self.t0 = records[0].header.UnixTime + records[0].header.UnixMs/1000
+                """
 
                 flag_first_batch = False
 
@@ -201,8 +209,20 @@ class EDFProcessor(object):
             if write_record_created_annotations:
                 print('INFO: EDF: writing record creation annotations...')
                 for rec in records:
-                    onset_in_seconds = rec.header.UnixTime + rec.header.UnixMs/1000 - t0
-                    self.edfwriter.writeAnnotation(onset_in_seconds=onset_in_seconds, duration_in_seconds=0.001, description='T %d Idx %d file %s' % (rec.header.Type, rec.header.PacketIndex, Path(filepath).name))
+                    onset_in_seconds = rec.header.UnixTime + rec.header.UnixMs / 1000 - t0
+                    self.edfwriter.writeAnnotation(onset_in_seconds=onset_in_seconds, duration_in_seconds=0.001,
+                                                   description='T %d Idx %d file %s' % (
+                                                   rec.header.Type, rec.header.PacketIndex, Path(filepath).name))
+
+                    # todo: annotations
+                    """
+                    here we can add the relevant annotations of QA tests, take in consideration that num. of events is limited
+                    
+                    for problem in problems:
+                        onset_in_seconds = problem_offset_in_second - self.t0
+                        self.edfwriter.writeAnnotation(onset_in_seconds=onset_in_seconds, duration_in_seconds=0.001,
+                                                        description= f("problem name"))
+                    """
 
             # populate buffers with data from databatch
             self._write_buffer(databatch)
@@ -210,21 +230,25 @@ class EDFProcessor(object):
             # write to EDF from buffers until the smallest amount of samples are written
             # most likely gyro and accl samples will be written first
             data_to_write = {REC_TYPE_ADC: 0, REC_TYPE_MOTION_GYRO: 0, REC_TYPE_MOTION_ACCL: 0}
-            #min_type = min(self._number_of_samples_in_second, key=self._number_of_samples_in_second.get)
-            print('INFO: EDF: writing buffer contents to EDF until all the buffers do not have enough samples to fill one second')
+            # min_type = min(self._number_of_samples_in_second, key=self._number_of_samples_in_second.get)
+            print(
+                'INFO: EDF: writing buffer contents to EDF until all the buffers do not have enough samples to fill one second')
             while all([self._left_to_read[type] >= self._number_of_samples_in_second[type] for type in self._types]):
-                #self._write_to_edf_from_buffer_multimodal(databatch)
+                # self._write_to_edf_from_buffer_multimodal(databatch)
                 for type in self._types:
-                    data_to_write[type] = self._buffer[type][self._read_offset[type]:self._read_offset[type]+self._number_of_samples_in_second[type]]
+                    data_to_write[type] = self._buffer[type][self._read_offset[type]:self._read_offset[type] +
+                                                                                     self._number_of_samples_in_second[
+                                                                                         type]]
                     data_to_write[type] = np.reshape(np.transpose(np.reshape(data_to_write[type],
                                                                              newshape=(
-                                                                             -1, self._number_of_channels[type]),
+                                                                                 -1, self._number_of_channels[type]),
                                                                              order='C')),
                                                      newshape=(self._number_of_samples_in_second[type],), order='C')
                     self._left_to_read[type] -= self._number_of_samples_in_second[type]
                     self._read_offset[type] += self._number_of_samples_in_second[type]
-                    #print('writing %d samples of type %d to edf' % (data_to_write[type].shape[0], type))
-                self.edfwriter.blockWriteDigitalShortSamples(np.concatenate([data_to_write[type] for type in self._types]))
+                    # print('writing %d samples of type %d to edf' % (data_to_write[type].shape[0], type))
+                self.edfwriter.blockWriteDigitalShortSamples(
+                    np.concatenate([data_to_write[type] for type in self._types]))
 
             # now there's at least one data type which has less samples in buffer to read from
             # than 1s worth of data...
@@ -243,15 +267,64 @@ class EDFProcessor(object):
 
                 # relocate leftover data to start of buffer
                 self._buffer[type][:self._left_to_read[type]] = self._buffer[type][self._read_offset[type]:
-                                                                                            self._read_offset[type] +
-                                                                                            self._left_to_read[type]]
+                                                                                   self._read_offset[type] +
+                                                                                   self._left_to_read[type]]
                 # pad with zeros anything above leftovers
                 self._buffer[type][self._left_to_read[type]:] = 0
 
                 # reset pointer for data read
                 self._read_offset[type] = 0
 
-
-
         self.edfwriter.close()
         print('INFO: EDF: finished writing EDF file %s' % self.file_path)
+
+
+def test_one_file(databatch, filepath, records, t0, num_of_channles):
+    """
+
+    :param databatch:
+    :param filepath:
+    :param records:
+    :param t0:
+
+    :return:
+    dict {timestamp:name of problem}
+
+    """
+
+    list_of_records_Utime = list()
+    list_of_records_IDXs = list()
+
+    flipped_idx_val = -65535
+    onset_in_time = -1
+    time_diff_variance_percent = 0.3
+    expected_time_diff = 0.03
+
+    # ----- create a data vectors to test
+
+    for idx, rec in enumerate(records):
+        if rec.type == REC_TYPE_ADC:
+            onset_in_time = rec.header.UnixTime + rec.header.UnixMs / 1000
+            list_of_records_Utime.append(onset_in_time)
+            list_of_records_IDXs.append(rec.header.PacketIndex)
+
+    time_diff = np.diff(list_of_records_Utime)
+    idx_diff = np.diff(list_of_records_IDXs)
+
+    # -----
+    # ----- seek for time and idx problems
+    num_of_recs_with_bad_adc_tdiff = np.where(time_diff
+                                              > expected_time_diff * (1 + time_diff_variance_percent))[0].tolist()
+
+    vals_of_tdiff_of_recs_with_bad_adc_tdiff = time_diff[
+        num_of_recs_with_bad_adc_tdiff].tolist()
+
+    num_of_recs_with_bad_adc_idxdiff = np.where((np.logical_and(
+        (idx_diff != 1),
+        (idx_diff != flipped_idx_val))))[0].tolist()
+
+    vals_of_idxdiff_of_recs_with_bad_adc_idxdiff = idx_diff[
+        num_of_recs_with_bad_adc_idxdiff].tolist()
+
+    # ----- handle results
+

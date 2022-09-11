@@ -160,14 +160,20 @@ class EDFProcessor(object):
         else:
             return True
 
-    def save_to_edf(self, data_generator, write_record_created_annotations):
+    def save_to_edf(self, data_generator, write_record_created_annotations,testing):
         flag_first_batch = True
         # onset_in_seconds = 0
 
-        for databatch, filepath, records, detected_data_types in data_generator:
+        # -- ----- for xf2 dataloss testing ------
 
-            if testing:
-                test_one_file()
+        problems_dict = dict()
+        total_lost_records = 0
+        total_lost_time_by_lost_records = 0
+        total_lost_time_by_time_diff = 0
+        total_number_of_record_flips = 0
+        total_adc_records = 0
+
+        for databatch, filepath, records, detected_data_types in data_generator:
 
             if flag_first_batch:
                 # prep signal headers and edf writer
@@ -205,6 +211,38 @@ class EDFProcessor(object):
 
                 flag_first_batch = False
 
+
+            if testing:
+
+                ad_22_seconds_bug = 22
+
+                problems_dict,num_of_recs = test_one_file(records)
+                filename = filepath.split('\\')[-1]
+                total_adc_records += num_of_recs
+
+                if 'start_of_recordflip_UnixTime' in problems_dict.keys():
+                    onset = problems_dict['start_of_recordflip_UnixTime'] - t0 + ad_22_seconds_bug
+                    anot_name = f'start of recors flip in file {filename}'
+                    self.edfwriter.writeAnnotation(onset_in_seconds=onset, duration_in_seconds=0.001,
+                                                   description=anot_name)
+                    total_number_of_record_flips += 1
+
+                if 'list_of_dataloss_timestamps' in problems_dict.keys():
+                    for timestamp in problems_dict['list_of_dataloss_timestamps']:
+                        onset = timestamp - t0 + ad_22_seconds_bug
+                        anot_name = f'Data loss in file : {filename}'
+                        self.edfwriter.writeAnnotation(onset_in_seconds=onset, duration_in_seconds=0.001,
+                                                       description=anot_name)
+
+                if 'lost_time_by_timestamps' in problems_dict.keys():
+                    total_lost_time_by_time_diff += problems_dict['lost_time_by_timestamps']
+
+                if 'num_of_lost_records' in problems_dict.keys():
+                    total_lost_records += problems_dict['num_of_lost_records']
+                    total_lost_time_by_lost_records += problems_dict['time_of_lost_records']
+
+                problems_dict = {}
+
             # write record annotation
             if write_record_created_annotations:
                 print('INFO: EDF: writing record creation annotations...')
@@ -219,7 +257,7 @@ class EDFProcessor(object):
                     here we can add the relevant annotations of QA tests, take in consideration that num. of events is limited
                     
                     for problem in problems:
-                        onset_in_seconds = problem_offset_in_second - self.t0
+                        onset_in_seconds = problem_offset_in_second - t0
                         self.edfwriter.writeAnnotation(onset_in_seconds=onset_in_seconds, duration_in_seconds=0.001,
                                                         description= f("problem name"))
                     """
@@ -275,28 +313,35 @@ class EDFProcessor(object):
                 # reset pointer for data read
                 self._read_offset[type] = 0
 
+        if testing:
+
+            print('------------\n')
+
+            print(f'Results: \n'
+                  f'Total num of record flips events : {total_number_of_record_flips}\n'
+                  f'Total records lost : {total_lost_records}\n'
+                  f'Total lost time by timestamps : {total_lost_time_by_time_diff} sec or '
+                  f'{100 * (total_lost_time_by_time_diff/total_adc_records)} percent of whole session\n'
+                  f'Total lost time by lost records : {total_lost_time_by_lost_records} sec or '
+                  f'{100 * (total_lost_time_by_lost_records/total_adc_records)} percent of whole session\n')
+
+            print('------------\n')
+
+
         self.edfwriter.close()
         print('INFO: EDF: finished writing EDF file %s' % self.file_path)
 
 
-def test_one_file(databatch, filepath, records, t0, num_of_channles):
-    """
-
-    :param databatch:
-    :param filepath:
-    :param records:
-    :param t0:
-
-    :return:
-    dict {timestamp:name of problem}
-
-    """
+def test_one_file(records):
+    num_of_recs = 0
+    problems_dict = {}
 
     list_of_records_Utime = list()
     list_of_records_IDXs = list()
 
+    list_of_dataloss_timestamps = list()
+
     flipped_idx_val = -65535
-    onset_in_time = -1
     time_diff_variance_percent = 0.3
     expected_time_diff = 0.03
 
@@ -304,6 +349,7 @@ def test_one_file(databatch, filepath, records, t0, num_of_channles):
 
     for idx, rec in enumerate(records):
         if rec.type == REC_TYPE_ADC:
+            num_of_recs = num_of_recs +1
             onset_in_time = rec.header.UnixTime + rec.header.UnixMs / 1000
             list_of_records_Utime.append(onset_in_time)
             list_of_records_IDXs.append(rec.header.PacketIndex)
@@ -314,17 +360,42 @@ def test_one_file(databatch, filepath, records, t0, num_of_channles):
     # -----
     # ----- seek for time and idx problems
     num_of_recs_with_bad_adc_tdiff = np.where(time_diff
-                                              > expected_time_diff * (1 + time_diff_variance_percent))[0].tolist()
+                                              > expected_time_diff * (1 + time_diff_variance_percent))[0]
 
     vals_of_tdiff_of_recs_with_bad_adc_tdiff = time_diff[
-        num_of_recs_with_bad_adc_tdiff].tolist()
+        num_of_recs_with_bad_adc_tdiff]
 
     num_of_recs_with_bad_adc_idxdiff = np.where((np.logical_and(
         (idx_diff != 1),
-        (idx_diff != flipped_idx_val))))[0].tolist()
+        (idx_diff != flipped_idx_val))))[0]
 
     vals_of_idxdiff_of_recs_with_bad_adc_idxdiff = idx_diff[
-        num_of_recs_with_bad_adc_idxdiff].tolist()
+        num_of_recs_with_bad_adc_idxdiff]
 
     # ----- handle results
+
+    length_of_flipped_data_vector = 0
+
+    if vals_of_idxdiff_of_recs_with_bad_adc_idxdiff.shape[0] != 0:
+        neg_idx_jump_arr = np.where(vals_of_idxdiff_of_recs_with_bad_adc_idxdiff < 0)[0]
+        if neg_idx_jump_arr.shape[0] != 0:
+            num_of_bad_record = num_of_recs_with_bad_adc_idxdiff[neg_idx_jump_arr[0]]
+            problems_dict['start_of_recordflip_UnixTime'] = records[num_of_bad_record].header.UnixTime + records[num_of_bad_record].header.UnixMs/1000
+
+        # this sum takes care of flipped data - because of summing all the elements, all flipped records are not taken in concideration
+        num_of_lost_records = np.sum(vals_of_idxdiff_of_recs_with_bad_adc_idxdiff) - vals_of_idxdiff_of_recs_with_bad_adc_idxdiff.shape[0]
+        if num_of_lost_records != 0:
+            problems_dict['num_of_lost_records'] = num_of_lost_records
+            problems_dict['time_of_lost_records'] = num_of_lost_records * expected_time_diff
+
+    if num_of_recs_with_bad_adc_tdiff.shape[0] != 0:
+        lost_time_by_timestamps = sum(vals_of_tdiff_of_recs_with_bad_adc_tdiff) - vals_of_tdiff_of_recs_with_bad_adc_tdiff.shape[0]*expected_time_diff
+        for bad_rec_idx in num_of_recs_with_bad_adc_tdiff:
+            bad_record = records[bad_rec_idx]
+            list_of_dataloss_timestamps.append(bad_record.header.UnixTime + bad_record.header.UnixMs/1000)
+        problems_dict['list_of_dataloss_timestamps'] = list_of_dataloss_timestamps
+        problems_dict['lost_time_by_timestamps'] = lost_time_by_timestamps
+
+    return problems_dict,num_of_recs
+
 

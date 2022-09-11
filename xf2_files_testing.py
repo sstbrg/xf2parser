@@ -154,6 +154,9 @@ def test_single_file(databatch, records, triangle_flag=0, test_on_one_channel=1,
     problems_with_records[
         'vals_of_tdiff_of_recs_with_bad_tdiff'] = vals_of_tdiff_of_recs_with_bad_adc_tdiff
 
+    if len(vals_of_idxdiff_of_recs_with_bad_adc_idxdiff) > 0:
+        print(1)
+
     problems_with_records['num_of_recs_with_bad_idxdiff'] = num_of_recs_with_bad_adc_idxdiff
     problems_with_records['vals_of_idxdiff_of_recs_with_bad_idxdiff'] = \
         vals_of_idxdiff_of_recs_with_bad_adc_idxdiff
@@ -477,9 +480,9 @@ def test_chunk_of_sesions_and_create_statistics():
     pass
 
 
-local_work_directory = r'C:\Users\ivan\OneDrive - xtrodes\Desktop\DATA\SD test\30VSD -7e7f test2'
+local_work_directory = r'C:\Users\ivan\OneDrive - xtrodes\Desktop\DATA\09.08.22 0x101\02d5'
 
-# dict_name, _ = test_session(local_work_directory, triangle_flag=0, test_on_one_channel=0, tested_freq=0,gather_statistics=0)
+dict_name, _ = test_session(local_work_directory, triangle_flag=0, test_on_one_channel=0, tested_freq=0,gather_statistics=0)
 
 
 dd = local_work_directory.split('\\')[-1] + '_results_dict.pkl'

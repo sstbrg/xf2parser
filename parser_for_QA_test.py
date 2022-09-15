@@ -1,58 +1,54 @@
-
-
 """
 
 Example of a code for iterating over XF2 files for QA data integrity tests
 
 """
+import tqdm
+
 from XF2Parser import *
 from EDFExport import *
 import pyedflib
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.signal import welch
-import pickle
-import os
-import csv
-import collections
+from atp import correlation_test
+
+pass_to_folder = r'./test'
 
 
-pass_to_folder = r'C:\Users\ivan\OneDrive - xtrodes\Desktop\DATA\0x101\sanity'
-
-def corr_test(dataschunk_onset):
+def corr_test(dataschunk_onset, datachunk_corr):
     pass
+
+
 def dummy_test():
     pass
 
-def iterate_over_xf2_files(pass_to_folder,corr_flag,dummy_flag):
 
-
-
-    parser = Parser(work_directory=pass_to_folder)
-    data_gen = parser.process_files(exclude=())
+def iterate_over_xf2_files(data_gen, num_of_files_for_corr, corr_flag, dummy_flag):
+    # parser = Parser(work_directory=pass_to_folder)
+    # data_gen = parser.process_files(exclude=())
 
     files_count_corr = 0
     files_count_dummy = 0
-    num_of_files_for_corr = 5
+    # num_of_files_for_corr = 818
     num_of_files_for_dummy = 2
 
     first_file_flag = 1
-    num_of_channels = 16 # updated later
+    num_of_channels = 16  # updated later
 
-    first_timestamp_in_unix_time = 0 # updated later
+    first_timestamp_in_unix_time = 0  # updated later
 
     data_chunk_corr = list()  # can be improved to allocated np array with len of X files * pre-calculated num of samples - zero trimming
     data_chunk_dummy = list()  # can be improved to allocated np array with len of X files * pre-calculated num of samples - zero trimming
+    bad_timestamps = list()
 
+    for databatch, filepath, records, detected_data_types in tqdm.tqdm(data_gen, total=num_of_files_for_corr):
+        idx = 1
 
-    for databatch, filepath, records, detected_data_types in data_gen:
-
-
-    # handle if the file is zero - sized
+        # handle if the file is zero - sized
         if len(records) == 0:
             continue
 
-    # find the first time of the whole recording stamp in unix time
+        # find the first time of the whole recording stamp in unix time
         if first_file_flag:
             for rec in records:
                 if rec.type == REC_TYPE_ADC:
@@ -69,38 +65,50 @@ def iterate_over_xf2_files(pass_to_folder,corr_flag,dummy_flag):
                 first_ts_of_the_file_for_corr = rec.header['UnixTime'] + rec.header['UnixMs'] / 1000
                 break
 
-        #create chunks of data for corr and for dummy
+        # create chunks of data for corr and for dummy
 
         ADC_data_not_reshaped = databatch[REC_TYPE_ADC]
         data_reshaped = np.reshape(ADC_data_not_reshaped, (-1, num_of_channels))
         data_reshaped = np.transpose(data_reshaped)
 
-
         if corr_flag:
-            #lets collect data, and after the chunk is full, test it
+            # lets collect data, and after the chunk is full, test it
             if files_count_corr == 0:
                 # initiate a matrix
                 data_chunk_corr = data_reshaped
                 # save a timestamp of the first sample in first file in the data chunk
                 first_ts_of_datachunk_for_corr = first_ts_of_the_file_for_corr
-                files_count_corr = files_count_corr +1
+                files_count_corr = files_count_corr + 1
             elif files_count_corr < num_of_files_for_corr:
-                data_chunk_corr = np.append(data_chunk_corr,data_reshaped)
+                data_chunk_corr = np.append(data_chunk_corr, data_reshaped, axis=1)
                 files_count_corr = files_count_corr + 1
             elif files_count_corr == num_of_files_for_corr:
+                # print(f"Batch n {idx}, the batch ts = {first_ts_of_datachunk_for_corr}")
                 # data_chunk_dummy already have num_of_files_for_corr datasets inside
                 # so we can make a correlation and handle the output data
-                pass_fail_flag,timestamps = corr_test(first_ts_of_datachunk_for_corr)
-                #code to append timestamps to an array or something
+                ADCtvec = np.arange(0, data_chunk_corr.shape[1] / 4000, 1 / 4000)
 
-                #free all
+                samp_num_pairs = correlation_test('test', data_chunk_corr, num_of_channels, 4000, inpAmp=1, inpFreq=31,
+                                                  ADCtvec=ADCtvec,
+                                                  num_of_periods_per_window=5,
+                                                  overlap=1)
+                for idx_pair in samp_num_pairs:
+                    bad_timestamps.append([first_ts_of_datachunk_for_corr + int(idx_pair[0]) / 4000,
+                                           first_ts_of_datachunk_for_corr + int(idx_pair[1]) / 4000])
+
+                # code to append timestamps to an array or something
+
+                # free all
+                # plt.plot(ADCtvec, data_chunk_corr[0])
+                # for idx_pair in samp_num_pairs:
+                #     plt.axvspan(ADCtvec[int(idx_pair[0])], ADCtvec[int(idx_pair[1])], 0, 12600, alpha=0.7, color='red')
+
                 files_count_corr = 0
-                data_chunk_corr = 0 #just to be sure the variable is free
+                data_chunk_corr = 0  # just to be sure the variable is free
                 first_ts_of_datachunk_for_corr = 0
             else:
-                #handle_error or smt
+                # handle_error or smt
                 print(1)
-
 
         if dummy_flag:
             if files_count_dummy == 0:
@@ -126,8 +134,4 @@ def iterate_over_xf2_files(pass_to_folder,corr_flag,dummy_flag):
                 # handle_error or smt
                 print(1)
 
-
-
-
-
-
+    return bad_timestamps, first_timestamp_in_unix_time

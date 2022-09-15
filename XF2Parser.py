@@ -22,7 +22,7 @@ class Parser(object):
                             prev_time = rec.header.UnixTime + rec.header.UnixMs / 1000
                             first_rec = False
                         if prev_time > (rec.header.UnixTime + rec.header.UnixMs / 1000):
-                            print('ERROR: FILE: the records are not time-aligned !!!')
+                            # print('ERROR: FILE: the records are not time-aligned !!!')
                             return False
 
                         prev_time = rec.header.UnixTime + rec.header.UnixMs / 1000
@@ -59,7 +59,7 @@ class Parser(object):
 
         for c, filepath in enumerate(file_list):
 
-            print('INFO: FILE: collecting data from records of %s' % filepath)
+            # print('INFO: FILE: collecting data from records of %s' % filepath)
             f = File(filepath=filepath)
             f.get_records()
             #if not self._check_if_records_are_chronological(f.records):
@@ -71,7 +71,7 @@ class Parser(object):
 
             # we extract the data per record
             num_of_records = len(f.records)
-            print('INFO: FILE: there are %d records' % num_of_records)
+            # print('INFO: FILE: there are %d records' % num_of_records)
 
 
             for c, rec in enumerate(f.records):
@@ -167,4 +167,4 @@ class Parser(object):
                     REC_TYPE_MOTION_ACCL: flag_accl,
                     REC_TYPE_MOTION_GYRO: flag_gyro})
 
-        print('INFO: FILE: finished collecting data\n')
+        # print('INFO: FILE: finished collecting data\n')

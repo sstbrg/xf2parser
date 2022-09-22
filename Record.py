@@ -48,18 +48,18 @@ class Record(object):
 
         if parsed.Sor != START_OF_RECORD:
             self.errors.append(ERROR_WRONG_SOR_IN_HEADER)
-            print(ERROR_WRONG_SOR_IN_HEADER)
+            # print(ERROR_WRONG_SOR_IN_HEADER)
 
         if self.offset + self.HeaderSize + parsed.Length - 6 - 1 + self.EORSize >= len(content):
             self.errors.append(ERROR_HEADER_POINTS_BEYOND_EOF)
-            print(ERROR_HEADER_POINTS_BEYOND_EOF)
+            # print(ERROR_HEADER_POINTS_BEYOND_EOF)
             return False
 
         try:
             if content[
                 self.offset + self.HeaderSize + parsed.Length - 6 - 1 + self.EORSize] != END_OF_RECORD:
                 self.errors.append(ERROR_WRONG_EOR)
-                print(ERROR_WRONG_EOR)
+                # print(ERROR_WRONG_EOR)
         except:
             print(1)
 
@@ -88,7 +88,7 @@ class Record(object):
 
             if eor.CRC != calc_crc16(content[self.offset+1:self.offset+1+self.HeaderSize+self.header.Length-6-1]):
                 self.errors.append(ERROR_WRONG_CRC)
-                print(ERROR_WRONG_CRC)
+                # print(ERROR_WRONG_CRC)
             return eor
         else:
             return False

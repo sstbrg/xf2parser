@@ -1,7 +1,11 @@
-attrs
-numpy
-natsort
-pyedflib
+attrs~=21.4.0
+numpy~=1.23.0
+natsort~=8.1.0
+pyedflib~=0.1.29
 tqdm
-boto3
-construct
+boto3~=1.24.24
+construct~=2.10.68
+botocore~=1.27.24
+setuptools~=60.2.0
+matplotlib~=3.5.2
+scipy~=1.9.0
